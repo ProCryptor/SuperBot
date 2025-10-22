@@ -29,31 +29,38 @@ class TGApp(RequestClient):
 
     def progress_bar(self, completed, total):
         filled = int(completed * 10 / total) if total > 0 else 0
-        return "█" * filled + "░" * (10 - filled)
+        return "🟦" * filled + "⬜" * (10 - filled)  # Синие эмодзи для прогресс-бара
 
     async def _get_text(self) -> str:
         completed_tasks, uncompleted_tasks = await self.__db_utils.get_tasks_info(self.private_key)
-
-        completed_tasks_list = "\n".join(f"- {task.task_name}" for task in completed_tasks) or "No tasks completed."
-        uncompleted_tasks_list = "\n".join(f"- {task.task_name}" for task in uncompleted_tasks) or "All tasks completed."
-
         completed_wallets_count = await self.__db_utils.get_completed_wallets_count()
         total_wallets_count = await self.__db_utils.get_total_wallets_count()
 
+        # Ограничиваем списки задач до 3 пунктов, чтобы не перегружать
+        completed_tasks_list = "\n".join(
+            f"🔹 {task.task_name}" for task in completed_tasks[:3]
+        ) or "No tasks completed."
+        uncompleted_tasks_list = "\n".join(
+            f"🔸 {task.task_name}" for task in uncompleted_tasks[:3]
+        ) or "All tasks completed."
+
+        # Экранируем текст для MarkdownV2
         completed_tasks_list = escape_markdown_v2(completed_tasks_list)
         uncompleted_tasks_list = escape_markdown_v2(uncompleted_tasks_list)
+        wallet_address = escape_markdown_v2(self.__account.wallet_address)
 
+        # Формируем сообщение
         text = (
-            f"💼 **Wallet Processed**:\n"
-            f"`{self.__account.wallet_address}`\n\n"
-            f"📋 **Tasks**:\n"
-            f"🟢**Done**: {len(completed_tasks)} \n"
-            f"🟠**To Do**: {len(uncompleted_tasks)} \n\n"
-            f"ℹ️**Details**:\n"
-            f"**Completed**:\n{completed_tasks_list}\n"
-            f"**Pending**:\n{uncompleted_tasks_list}\n\n"
-            f"📈 **Progress**:\n"
-            f"**{completed_wallets_count}/{total_wallets_count}** [{self.progress_bar(completed_wallets_count, total_wallets_count)}]"
+            f"🔷 *Wallet Update* 🔷\n"
+            f"•  *Address*: `{wallet_address}`\n\n"
+            f"•  *Tasks Status*:\n"
+            f"✅ *Completed*: {len(completed_tasks)}\n"
+            f"•  *Pending*: {len(uncompleted_tasks)}\n\n"
+            f"•  *Details*:\n"
+            f"*Done*:\n{completed_tasks_list}\n"
+            f"*To Do*:\n{uncompleted_tasks_list}\n"
+            f"{'*(+ more)*' if len(completed_tasks) > 3 or len(uncompleted_tasks) > 3 else ''}\n"
+            f"•  *Progress*: {completed_wallets_count}/{total_wallets_count} {self.progress_bar(completed_wallets_count, total_wallets_count)}"
         )
 
         return text
@@ -74,7 +81,7 @@ class TGApp(RequestClient):
 
 
 def escape_markdown_v2(text: str) -> str:
-    specials = r"_-*[]()~`>#+=|{}.!"
+    specials = r"_*[]()~`>#+=|{}.!"
     for char in specials:
         text = text.replace(char, f"\\{char}")
     return text

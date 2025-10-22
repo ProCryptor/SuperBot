@@ -6,7 +6,6 @@ from web3 import Web3
 from loguru import logger
 
 from config import *
-from functions import *
 from src.modules.custom_modules import *
 from src.models.bridge import BridgeConfig
 from src.models.token import Token
@@ -34,7 +33,7 @@ from src.utils.user.account import Account
 from src.utils.user.super_account.client import SuperAccount
 
 
-async def process_cex_withdraw(route: Route) -> Optional[bool]:
+async def process_cex_withdraw(route: Route, chain: Chain) -> Optional[bool]:
     account = Account(
         private_key=route.wallet.private_key,
         proxy=route.wallet.proxy,
@@ -95,7 +94,7 @@ async def process_wrapper_unwrapper(route: Route, chain: Chain) -> Optional[bool
 
     random_sleep = random.randint(PAUSE_BETWEEN_MODULES[0], PAUSE_BETWEEN_MODULES[1]) if isinstance(
         PAUSE_BETWEEN_MODULES, list) else PAUSE_BETWEEN_MODULES
-    logger.info(f'Сплю {random_sleep} секунд перед анврапом...')
+    logger.info(f'Sleep {random_sleep} secs before unwrap...')
     await sleep(random_sleep)
 
     await wrapper.wrap(action='unwrap')
@@ -115,7 +114,7 @@ async def process_swap(
     use_percentage = config_class.use_percentage
     swap_percentage = config_class.swap_percentage
     swap_all_balance = config_class.swap_all_balance
-
+    
     swap_instance = swap_class(
         private_key=route.wallet.private_key,
         from_token=from_token,
@@ -142,12 +141,8 @@ def create_process_swap_function(config_class: Any, swap_class: type[ABCSwap]) -
 
 process_matcha_swap = create_process_swap_function(MatchaSwapSettings, MatchaSwap)
 process_bungee_swap = create_process_swap_function(BungeeSwapSettings, BungeeSwap)
-process_sushi_swap = create_process_swap_function(SushiSwapSettings, SushiSwap)
 process_owlto_swap = create_process_swap_function(OwltoSwapSettings, OwltoSwap)
 process_relay_swap = create_process_swap_function(RelaySwapSettings, RelaySwap)
-process_inky_swap = create_process_swap_function(InkySwapSettings, InkySwap)
-process_oku_swap = create_process_swap_function(OkuSwapSettings, OkuSwap)
-process_defillama_swap = create_process_swap_function(DefillamaSwapSettings, DefillamaSwap)
 
 
 async def process_bridge(route: Route, to_chain: Chain, from_chain: Chain, bridge_class: type) -> Optional[bool]:
@@ -163,8 +158,8 @@ async def process_bridge(route: Route, to_chain: Chain, from_chain: Chain, bridg
     to_chain_balance = await to_chain_account.get_wallet_balance(is_native=True)
     if to_chain_balance / 10 ** 18 >= DisperseChainsSettings.min_balance_in_chains[to_chain.chain_name]:
         logger.debug(
-            f'В сети {to_chain.chain_name} уже есть {round((to_chain_balance / 10 ** 18), 5)} ETH. '
-            f'Бридж не требуется.'
+            f'In chain {to_chain.chain_name} already {round((to_chain_balance / 10 ** 18), 5)} ETH. '
+            f'Bridge not needed.'
         )
         return True
 
@@ -213,7 +208,7 @@ async def get_balances_for_chains(
                 balance = await account.web3.eth.get_balance(wallet_address)
                 break
             except Exception as ex:
-                logger.info(f'Не удалось проверить баланс | {ex}')
+                logger.info(f'Cant check balance| {ex}')
                 await sleep(2)
         balances[chain_name] = balance
 
@@ -260,7 +255,7 @@ async def process_chain_disperse(route: Route) -> Optional[bool]:
         random_sleep = random.randint(PAUSE_BETWEEN_MODULES[0], PAUSE_BETWEEN_MODULES[1]) if isinstance(
             PAUSE_BETWEEN_MODULES, list) else PAUSE_BETWEEN_MODULES
 
-        logger.info(f'Сплю {random_sleep} секунд перед следующим бриджом...')
+        logger.info(f'Sleep {random_sleep} secs before next bridge...')
 
         await sleep(random_sleep)
 
@@ -283,13 +278,13 @@ def generate_activities(chain_name) -> list[str]:
                            if activity not in ['RANDOM_SWAPS', 'SWAP_ALL_TO_ETH']]
 
     if not filtered_activities:
-        logger.warning(f'Нет доступных активностей для сети {chain_name} после фильтрации')
+        logger.warning(f'No availible activities for {chain_name} after filtering')
         return []
 
     random_activities = [random.choice(filtered_activities) for _ in range(num_operations)]
 
     logger.info(
-        f'Создал список активностей: {random_activities} ({num_operations}/{len(filtered_activities)}), для сети - [{chain_name}]')
+        f'Created activities {random_activities} ({num_operations}/{len(filtered_activities)}), for chain - [{chain_name}]')
     return random_activities
 
 
@@ -323,71 +318,24 @@ async def process_activities(route: Route, chain_name: str, activities: list[str
     for activity in activities:
         if activity == 'RANDOM_TXS':
             await process_random_activities(route, chain_name)
-        if activity not in AVAILABLE_ACTIVITIES[chain.chain_name]:
-            logger.warning(f'Активность {activity} не поддерживается в сети {chain.chain_name}')
+            continue
+        elif activity not in AVAILABLE_ACTIVITIES[chain.chain_name]:
+            logger.warning(f'Activity {activity} not availible in chain {chain.chain_name}')
             continue
         await function_handlers[activity](route, chain)
 
         random_sleep = random.randint(PAUSE_BETWEEN_MODULES[0], PAUSE_BETWEEN_MODULES[1]) if isinstance(
             PAUSE_BETWEEN_MODULES, list) else PAUSE_BETWEEN_MODULES
 
-        logger.info(f'Сплю {random_sleep} секунд перед следующей активностью...')
+        logger.info(f'Sleep {random_sleep} secs before next activity...')
 
         await sleep(random_sleep)
     return True
 
-
-async def process_ink_activities(route: Route) -> Optional[bool]:
-    activities = RandomDailyTxConfig.INK_MODULES
-    random.shuffle(activities)
-    return await process_activities(route, 'INK', activities)
-
-
-async def process_base_activities(route: Route) -> Optional[bool]:
+async def process_base_activities(route: Route, chain: Chain) -> Optional[bool]:
     activities = RandomDailyTxConfig.BASE_MODULES
     random.shuffle(activities)
     return await process_activities(route, 'BASE', activities)
-
-
-async def process_op_activities(route: Route) -> Optional[bool]:
-    activities = RandomDailyTxConfig.OPTIMISM_MODULES
-    random.shuffle(activities)
-    return await process_activities(route, 'OP', activities)
-
-
-async def process_lisk_activities(route: Route) -> Optional[bool]:
-    activities = RandomDailyTxConfig.LISK_MODULES
-    random.shuffle(activities)
-    return await process_activities(route, 'LISK', activities)
-
-
-async def process_unichain_activities(route: Route) -> Optional[bool]:
-    activities = RandomDailyTxConfig.UNICHAIN_MODULES
-    random.shuffle(activities)
-    return await process_activities(route, 'UNICHAIN', activities)
-
-
-async def process_soneium_activities(route: Route) -> Optional[bool]:
-    activities = RandomDailyTxConfig.SONEIUM_MODULES
-    random.shuffle(activities)
-    return await process_activities(route, 'SONEIUM', activities)
-
-
-async def process_zora_activities(route: Route) -> Optional[bool]:
-    activities = RandomDailyTxConfig.ZORA_MODULES
-    random.shuffle(activities)
-    return await process_activities(route, 'ZORA', activities)
-
-
-async def process_swell_activities(route: Route) -> Optional[bool]:
-    activities = RandomDailyTxConfig.SWELL_MODULES
-    random.shuffle(activities)
-    return await process_activities(route, 'SWELL', activities)
-
-async def process_mode_activities(route: Route) -> Optional[bool]:
-    activities = RandomDailyTxConfig.MODE_MODULES
-    random.shuffle(activities)
-    return await process_activities(route, 'MODE', activities)
 
 async def process_uniswap(route: Route, chain: Chain) -> Optional[bool]:
     from_token = UniswapSettings.from_token
@@ -461,10 +409,6 @@ async def process_random_swaps(route: Route, chain: Chain) -> Optional[bool]:
         BungeeSwap: BungeeSwapSettings,
         MatchaSwap: MatchaSwapSettings,
         OwltoSwap: OwltoSwapSettings,
-        DefillamaSwap: DefillamaSwapSettings,
-        InkySwap: InkySwapSettings,
-        OkuSwap: OkuSwapSettings,
-        SushiSwap: SushiSwapSettings,
         RelaySwap: RelaySwapSettings
     }
 
@@ -475,7 +419,7 @@ async def process_random_swaps(route: Route, chain: Chain) -> Optional[bool]:
             break
         swap_class = random.choice(supported_swap_classes)
 
-        print(f'Свапаю на {swap_class.__name__}')
+        logger.info(f'Swap on {swap_class.__name__}')
         from_token = 'ETH'
         to_token = random.choice(token_list)
         amount = settings_mapping[swap_class].amount
@@ -501,7 +445,7 @@ async def process_random_swaps(route: Route, chain: Chain) -> Optional[bool]:
             random_sleep = random.randint(PAUSE_BETWEEN_MODULES[0], PAUSE_BETWEEN_MODULES[1]) if isinstance(
                 PAUSE_BETWEEN_MODULES, list) else PAUSE_BETWEEN_MODULES
 
-            logger.info(f'Сплю {random_sleep} секунд перед следующим свапом...')
+            logger.info(f'Sleep {random_sleep} secs before next swap...')
             await sleep(random_sleep)
 
         if swap == 'ZeroBalance':
@@ -626,62 +570,26 @@ async def process_badges(route: Route) -> Optional[bool]:
 
 AVAILABLE_ACTIVITIES = {
     'BASE': ['UNISWAP', 'SUSHI_SWAP', 'MATCHA_SWAP', 'BUNGEE_SWAP', 'OWLTO_SWAP', 'SWAP_ALL_TO_ETH', 'RANDOM_SWAPS',
-             'RELAY_SWAP', 'OKU_SWAP', 'DEFILLAMA_SWAP', 'RUBYSCORE_VOTE', 'WRAPPER_UNWRAPPER', 'CONTRACT_DEPLOY'],
-    'ZORA': ['SWAP_ALL_TO_ETH', 'RANDOM_SWAPS', 'OWLTO_SWAP', 'RELAY_SWAP', 'UNISWAP', 'RUBYSCORE_VOTE',
-             'WRAPPER_UNWRAPPER', 'CONTRACT_DEPLOY'],
-    'INK': ['SWAP_ALL_TO_ETH', 'RANDOM_SWAPS', 'OWLTO_SWAP', 'RELAY_SWAP', 'INKY_SWAP', 'WRAPPER_UNWRAPPER', 'INK_GM',
-            'CONTRACT_DEPLOY'],
-    'OP': ['SWAP_ALL_TO_ETH', 'RANDOM_SWAPS', 'OWLTO_SWAP', 'RELAY_SWAP', 'UNISWAP', 'SUSHI_SWAP', 'MATCHA_SWAP',
-           'BUNGEE_SWAP', 'OKU_SWAP', 'WRAPPER_UNWRAPPER', 'CONTRACT_DEPLOY'],
-    'MODE': ['SWAP_ALL_TO_ETH', 'RANDOM_SWAPS', 'OWLTO_SWAP', 'RELAY_SWAP', 'SUSHI_SWAP', 'MATCHA_SWAP',
-             'WRAPPER_UNWRAPPER', 'CONTRACT_DEPLOY'],
-    'UNICHAIN': ['SWAP_ALL_TO_ETH', 'RANDOM_SWAPS', 'UNISWAP', 'OWLTO_SWAP', 'BUNGEE_SWAP', 'RELAY_SWAP', 'MATCHA_SWAP',
-                 'WRAPPER_UNWRAPPER', 'VENUS_DEPOSIT', 'VENUS_WITHDRAW', 'CONTRACT_DEPLOY'],
-    'LISK': ['SWAP_ALL_TO_ETH', 'RANDOM_SWAPS', 'RELAY_SWAP', 'OKU_SWAP', 'WRAPPER_UNWRAPPER', 'CONTRACT_DEPLOY'],
-    'SONEIUM': ['SWAP_ALL_TO_ETH', 'RANDOM_SWAPS', 'RELAY_SWAP', 'OKU_SWAP', 'WRAPPER_UNWRAPPER', 'CONTRACT_DEPLOY'],
-    'SWELL': ['SWAP_ALL_TO_ETH', 'WRAPPER_UNWRAPPER', 'CONTRACT_DEPLOY']
+             'RELAY_SWAP', 'OKU_SWAP', 'DEFILLAMA_SWAP', 'RUBYSCORE_VOTE', 'WRAPPER_UNWRAPPER', 'CONTRACT_DEPLOY']
 }
 
 function_handlers = {
     'UNISWAP': process_uniswap,
-    'SUSHI_SWAP': process_sushi_swap,
     'MATCHA_SWAP': process_matcha_swap,
     'BUNGEE_SWAP': process_bungee_swap,
     'OWLTO_SWAP': process_owlto_swap,
     'SWAP_ALL_TO_ETH': process_swap_all_to_eth,
     'RANDOM_SWAPS': process_random_swaps,
     'RELAY_SWAP': process_relay_swap,
-    'INKY_SWAP': process_inky_swap,
-    'OKU_SWAP': process_oku_swap,
-    'DEFILLAMA_SWAP': process_defillama_swap,
     'RUBYSCORE_VOTE': process_rubyscore_vote,
     'CONTRACT_DEPLOY': process_deploy,
-    'WRAPPER_UNWRAPPER': process_wrapper_unwrapper,
-    'VENUS_DEPOSIT': process_venus_deposit,
-    'VENUS_WITHDRAW': process_venus_withdraw,
-    'INK_GM': process_ink_gm
+    'WRAPPER_UNWRAPPER': process_wrapper_unwrapper
 }
 
 SUPPORTED_SWAPS_BY_CHAIN = {
-    "UNICHAIN": [Uniswap, BungeeSwap, MatchaSwap, OwltoSwap, RelaySwap],
-    "BASE": [Uniswap, MatchaSwap, SushiSwap, OwltoSwap, RelaySwap, OkuSwap, DefillamaSwap],
-    "ZORA": [Uniswap, OwltoSwap, RelaySwap],
-    "OP": [Uniswap, MatchaSwap, SushiSwap, OwltoSwap, RelaySwap, OkuSwap, DefillamaSwap],
-    "INK": [OwltoSwap, RelaySwap, InkySwap],
-    "MODE": [MatchaSwap, SushiSwap, OwltoSwap, RelaySwap],
-    "SONEIUM": [OwltoSwap, RelaySwap],
-    "LISK": [RelaySwap, OkuSwap],
-    "SWELL": [RelaySwap]
+    "BASE": [Uniswap, MatchaSwap, OwltoSwap, RelaySwap, BungeeSwap],
 }
 
 SUPPORTED_BRIDGES_BY_CHAIN = {
-    "UNICHAIN": [RelayBridge],
-    "BASE": [RelayBridge, AcrossBridge],
-    "ZORA": [RelayBridge],
-    "OP": [RelayBridge, AcrossBridge],
-    "INK": [RelayBridge, AcrossBridge],
-    "MODE": [RelayBridge],
-    "SONEIUM": [RelayBridge],
-    "LISK": [RelayBridge, AcrossBridge],
-    "SWELL": [RelayBridge]
+    "BASE": [RelayBridge, AcrossBridge]
 }

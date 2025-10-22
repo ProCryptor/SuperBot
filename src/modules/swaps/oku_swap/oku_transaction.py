@@ -5,6 +5,7 @@ from eth_account.messages import encode_typed_data
 from web3 import AsyncWeb3
 from web3.contract import Contract
 from loguru import logger
+from asyncio import sleep
 
 from src.models.swap import SwapConfig
 from src.models.contracts import ERC20
@@ -20,11 +21,12 @@ async def create_oku_swap_tx(
 ) -> tuple[Any, Any]:
     data, address, value, approvee, gas = await get_data(
         self,
-        self.config,
+        swap_config,
         amount,
         self.private_key
     )
     if not data:
+        logger.error(f"[{self.wallet_address}] | OkuSwap: No data from get_data")
         return None, None
     tx = {
         'from': self.wallet_address,
@@ -34,22 +36,23 @@ async def create_oku_swap_tx(
         'chainId': await self.web3.eth.chain_id,
         'gasPrice': await self.web3.eth.gas_price,
         'data': data,
-        'gas': int(gas)
+        'gas': int(gas * 1.2)  # Увеличиваем gas на 20% для надёжности
     }
-
+    logger.debug(f"[{self.wallet_address}] | OkuSwap tx: value={value} wei (~{value/10**18:.8f} ETH), gas={tx['gas']}, gasPrice={tx['gasPrice']}")
     return tx, approvee
 
 
 async def get_permit_signature(data: dict, web3: AsyncWeb3, private_key: str):
-    account = web3.eth.account.from_key(private_key)
-    full_message = data['typedData'][0]['payload']
-    structured_msg = encode_typed_data(full_message=full_message)
-    signed_data = account.sign_message(structured_msg)
-    signature = signed_data.signature.hex()
-    # v, r, s = signed_data.v, signed_data.r, signed_data.s
-    # token_contract = web3.eth.contract(address=web3.to_checksum_address(from_token_address), abi=ERC20.abi)
-
-    return signature
+    try:
+        account = web3.eth.account.from_key(private_key)
+        full_message = data['typedData'][0]['payload']
+        structured_msg = encode_typed_data(full_message=full_message)
+        signed_data = account.sign_message(structured_msg)
+        signature = signed_data.signature.hex()
+        return signature
+    except Exception as e:
+        logger.error(f"[{web3.eth.default_account}] | OkuSwap: Failed to sign permit: {str(e)}")
+        return None
 
 
 async def request_permit(data: dict, web3: AsyncWeb3, private_key: str, coupon: dict, tls_client):
@@ -64,6 +67,9 @@ async def request_permit(data: dict, web3: AsyncWeb3, private_key: str, coupon: 
         'user-agent': pyuseragents.random(),
     }
     signature = await get_permit_signature(data, web3, private_key)
+    if not signature:
+        logger.error(f"[{web3.eth.default_account}] | OkuSwap: No signature for permit")
+        return None, None, None
     data['typedData'][0]['signature'] = '0x' + signature
     json_data = {
         'coupon': coupon,
@@ -76,11 +82,19 @@ async def request_permit(data: dict, web3: AsyncWeb3, private_key: str, coupon: 
         headers=headers,
         json=json_data
     )
-
-    data = response_json['trade']['data']
-    value = int(response_json['trade']['value'], 16)
-    to = response_json['trade']['to']
-    return data, value, to
+    logger.debug(f"[{web3.eth.default_account}] | OkuSwap permit response: status={status}, response={response_json}")
+    if status != 200:
+        logger.error(f"[{web3.eth.default_account}] | OkuSwap permit error: status={status}, response={response_json}")
+        return None, None, None
+    try:
+        data = response_json['trade']['data']
+        value = int(response_json['trade']['value'], 16)
+        to = response_json['trade']['to']
+        logger.debug(f"[{web3.eth.default_account}] | OkuSwap permit: value={value} wei (~{value/10**18:.8f} ETH)")
+        return data, value, to
+    except (KeyError, TypeError) as e:
+        logger.error(f"[{web3.eth.default_account}] | OkuSwap permit parsing error: {str(e)}, response={response_json}")
+        return None, None, None
 
 
 async def get_data(self, swap_config: SwapConfig, amount: int, private_key: str):
@@ -94,35 +108,27 @@ async def get_data(self, swap_config: SwapConfig, amount: int, private_key: str)
     }
     url = 'https://canoe.v2.icarus.tools/market/usor/swap_quote'
 
-    decimals = 18
-    if not swap_config.from_token.name.upper() == 'ETH':
-        contract = self.web3.eth.contract(address=swap_config.from_token.address, abi=ERC20.abi)
-        decimals = await contract.functions.decimals().call()
-
-    adjusted_amount = int(amount) // 10 ** (decimals // 2) * 10 ** (decimals // 2)
-    formatted_amount = f"{adjusted_amount / 10 ** decimals:.18f}".rstrip('0').rstrip('.')
-    if swap_config.from_token.name not in ['ETH', 'LISK']:
-        formatted_amount = f"{adjusted_amount / 10 ** decimals:.{decimals}f}"
-    if swap_config.from_token.name.upper() == 'WBTC':
-        formatted_amount = f"{amount / 10 ** decimals:.8f}".rstrip('0').rstrip('.')
+    logger.debug(f"[{self.wallet_address}] | OkuSwap: Input amount={amount} wei (~{amount/10**18:.8f} ETH)")
 
     json_data = {
-        'chain': 'optimism' if self.chain.chain_name == 'OP' else self.chain.chain_name.lower(),
+        'chain': 'base',
         'account': self.wallet_address,
         'inTokenAddress': '0x0000000000000000000000000000000000000000' if swap_config.from_token.name.upper() == 'ETH'
         else swap_config.from_token.address,
         'outTokenAddress': '0x0000000000000000000000000000000000000000' if swap_config.to_token.name.upper() == 'ETH'
         else swap_config.to_token.address,
         'isExactIn': True,
-        'slippage': 50,
-        'inTokenAmount': str(formatted_amount),
+        'slippage': 50,  # 0.5%
+        'inTokenAmount': str(amount),
     }
+    logger.debug(f"[{self.wallet_address}] | OkuSwap quote request: {json_data}")
+
     attempt = 0
     while True:
         attempt += 1
         if attempt > 2:
-            logger.info("Failed to get response after 2 attempts")
-            break
+            logger.error(f"[{self.wallet_address}] | OkuSwap: Failed to get response after 2 attempts")
+            return None, None, None, None, None
         try:
             response_json, status = await tls_client.make_request(
                 method='POST',
@@ -130,25 +136,64 @@ async def get_data(self, swap_config: SwapConfig, amount: int, private_key: str)
                 headers=headers,
                 json=json_data
             )
-            gas = int(response_json['fees']['gas'])  # если перестанет воркать, то в этом проблема
+            logger.debug(f"[{self.wallet_address}] | OkuSwap API response: status={status}, response={response_json}")
+
+            if status != 200 or not response_json:
+                logger.error(f"[{self.wallet_address}] | OkuSwap API error: status={status}, response={response_json}")
+                await sleep(1)
+                continue
+
+            # Извлекаем gas
+            gas = int(response_json['candidateTrade']['fees']['gas']) if 'candidateTrade' in response_json and 'fees' in response_json['candidateTrade'] else 200000
+            if gas == 0:
+                logger.warning(f"[{self.wallet_address}] | OkuSwap: gas=0, using default 200000")
+                gas = 200000
+
+            # Проверяем value
+            value = int(response_json['coupon']['raw']['quote']['trade']['value'], 16)
+            if value > amount * 100:  # Если value сильно больше amount
+                logger.warning(f"[{self.wallet_address}] | OkuSwap: API returned oversized value={value} (~{value/10**18:.8f} ETH), adjusting to amount={amount} (~{amount/10**18:.8f} ETH)")
+                value = amount  # Используем amount как value
+
             if 'signingRequest' in response_json:
                 if swap_config.from_token.name != 'ETH':
-                    approvee = response_json['coupon']['raw']['executionInformation']['approvals'][0]['approvee']
+                    approvee = response_json['coupon']['raw']['executionInformation']['approvals'][0]['approvee'] if 'approvals' in response_json['coupon']['raw']['executionInformation'] else None
                     coupon = response_json['coupon']
                     signing_request = response_json['signingRequest']
-                    data, value, to = await request_permit(data=signing_request,
-                                                           coupon=coupon,
-                                                           web3=self.web3,
-                                                           private_key=private_key,
-                                                           tls_client=tls_client)
-                    return data, to, value, approvee, gas
-            data = response_json['coupon']['raw']['quote']['trade']['data']
-            address = response_json['coupon']['raw']['quote']['trade']['to']
-            value = int(response_json['coupon']['raw']['quote']['trade']['value'], 16)
-            approvee = None
-            if not swap_config.from_token.name == 'ETH':
-                approvee = response_json['coupon']['raw']['executionInformation']['approvals'][0]['approvee']
-            return data, address, value, approvee, gas
-        except (KeyError, TypeError):
-            logger.warning(f"Route [{swap_config.from_token.name} => {swap_config.to_token.name}] not found")
-            return None, None, None, None, None
+                    data, value, to = await request_permit(
+                        data=signing_request,
+                        coupon=coupon,
+                        web3=self.web3,
+                        private_key=private_key,
+                        tls_client=tls_client
+                    )
+                    if data:
+                        if value > amount * 100:
+                            logger.warning(f"[{self.wallet_address}] | OkuSwap permit: oversized value={value} (~{value/10**18:.8f} ETH), adjusting to amount={amount} (~{amount/10**18:.8f} ETH)")
+                            value = amount
+                        return data, to, value, approvee, gas
+                    else:
+                        logger.error(f"[{self.wallet_address}] | OkuSwap: permit failed")
+                        return None, None, None, None, None
+                else:
+                    logger.warning(f"[{self.wallet_address}] | OkuSwap: signingRequest for ETH, using quote directly")
+                    data = response_json['coupon']['raw']['quote']['trade']['data']
+                    address = response_json['coupon']['raw']['quote']['trade']['to']
+                    approvee = None
+                    return data, address, value, approvee, gas
+            else:
+                data = response_json['coupon']['raw']['quote']['trade']['data']
+                address = response_json['coupon']['raw']['quote']['trade']['to']
+                approvee = None
+                if not swap_config.from_token.name == 'ETH':
+                    approvee = response_json['coupon']['raw']['executionInformation']['approvals'][0]['approvee'] if 'approvals' in response_json['coupon']['raw']['executionInformation'] else None
+                return data, address, value, approvee, gas
+
+        except (KeyError, TypeError) as e:
+            logger.error(f"[{self.wallet_address}] | OkuSwap: KeyError/TypeError in response: {str(e)}, response={response_json}")
+            await sleep(1)
+            continue
+        except Exception as e:
+            logger.error(f"[{self.wallet_address}] | OkuSwap: Unexpected error: {str(e)}")
+            await sleep(1)
+            continue

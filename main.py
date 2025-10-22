@@ -19,8 +19,9 @@ from src.utils.data.mappings import module_handlers
 from src.utils.manage_tasks import manage_tasks
 from src.utils.retrieve_route import get_routes
 from src.models.route import Route
+from src.models.chain import Chain
+from src.utils.data.chains import chain_mapping
 from src.utils.tg_app.telegram_notifications import TGApp
-from functions import get_network_by_chain_id
 
 from src.ui.interface import get_module, LOGO_LINES, PROJECT_INFO, clear_screen, get_module_menu
 
@@ -76,14 +77,14 @@ async def process_route(route: Route) -> None:
         )
         await tg_app.send_message()
 
-async def process_module(task: str, route: Route, private_key: str) -> None:
-    if task == 'STARGATE_BRIDGE':
-        network = get_network_by_chain_id(int(3))
-        private_key = route.wallet.private_key
-        proxy = route.wallet.proxy
-        completed = await module_handlers[task]("STG", private_key, network, proxy)
-    else:
-        completed = await module_handlers[task](route)
+async def process_module(task: str, route: Route, private_key: str, chain_name: str = "BASE") -> None:
+    chain = Chain(
+        chain_name=chain_name,
+        native_token=chain_mapping[chain_name].native_token,
+        rpc=chain_mapping[chain_name].rpc,
+        chain_id=chain_mapping[chain_name].chain_id
+    )
+    completed = await module_handlers[task](route, chain)
     if completed:
         await manage_tasks(private_key, task)
 
@@ -108,8 +109,7 @@ async def main_loop() -> None:
         if module == 1:
             if SHUFFLE_WALLETS:
                 random.shuffle(private_keys)
-            print(private_keys)
-            print(proxies)
+
             logger.debug("Generating new database")
             await generate_database(engine, private_keys, proxies)
 

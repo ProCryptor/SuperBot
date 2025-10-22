@@ -75,8 +75,7 @@ class DataBaseUtils:
                     session.add(transaction)
                     if task_name:
                         logger.success(
-                            f'✔️ | Successfully added new entry to DataBase '
-                            f'with private_key={private_key[:4]}...{private_key[-4:]} and task_name={task_name}'
+                            f'✔️ | Successfully added -> private_key={private_key[:4]}...{private_key[-4:]} - task_name={task_name}'
                         )
 
                 await session.commit()

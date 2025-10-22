@@ -1,63 +1,128 @@
-# 🛠️ Superchain Activity — by Finesse Labs × CF
+# 🔷 Base Onchain Activity — by Finesse Labs × CF
 
-A powerful automation tool designed to maintain and simulate activity across the Superchain ecosystem.
+Automation tool to simulate and maintain **onchain activity** in the **Base ecosystem**.  
+Supports modular task routes, randomization, OKX integration, and Telegram alerts.
 
 ---
 
-## 🔧 Configuration
+## ⚙️ Configuration
 
-All settings are located in `config.py` and `tasks.py`.
+Main settings are in `config.py` and `tasks.py`.
 
 ### ⏱️ Timings & Retry Logic
-- `PAUSE_BETWEEN_WALLETS` — Delay between processing wallets.
-- `PAUSE_BETWEEN_MODULES` — Delay between executing modules.
-- `RETRIES` — Number of retry attempts on failure.
-- `PAUSE_BETWEEN_RETRIES` — Delay before each retry.
+- `PAUSE_BETWEEN_WALLETS` — Delay between wallets.
+- `PAUSE_BETWEEN_MODULES` — Delay between modules.
+- `RETRIES` — Retry attempts on failure.
+- `PAUSE_BETWEEN_RETRIES` — Delay before retry.
+- `WAIT_FOR_RECEIPT` — Wait for funds to arrive before next module.
 
-### ⚙️ Initial Modules
-- `OKX_WITHDRAW` — Withdraw ETH from OKX.
-- `DISPERSE_BRIDGE` — Bridge ETH from selected networks to others via `DisperseChainsSettings`.
-- Activity modules per chain are configured in `RandomDailyTxConfig`.
+### 🔑 Wallets & Proxies
+- `wallets.txt` — List of private keys (`0x...`)
+- `proxies.txt` — Proxies (`user:pass@host:port`)
+- `MOBILE_PROXY` / `ROTATE_IP` — Proxy behavior.
 
-**Supported Modules:**
+### 📲 Notifications
+- `TG_BOT_TOKEN` — Telegram bot token.
+- `TG_USER_ID` — Your Telegram ID for logs.
 
-`UNISWAP`, `SUSHI_SWAP`, `MATCHA_SWAP`, `BUNGEE_SWAP`, `OWLTO_SWAP`, `SWAP_ALL_TO_ETH`, `RANDOM_SWAPS`, `RELAY_SWAP`, `INKY_SWAP`, `OKU_SWAP`, `DEFILLAMA_SWAP`, `RUBYSCORE_VOTE`, `CONTRACT_DEPLOY`, `STARGATE_BRIDGE`, `WRAPPER_UNWRAPPER`, `VENUS_DEPOSIT`, `VENUS_WITHDRAW`, `INK_GM`, and more.
+---
 
-> Each module's specific config can be found in the lower section of `config.py`.
+## 🔷 Tasks & Routes
 
+Defined in `tasks.py`.
+
+- **TASKS** — Top-level list of tasks to run.  
+- `[ ]` — One random choice from the list.  
+- `( )` — All inside are executed in random order.  
+- Single string — Executes directly.  
+- `OKX_WITHDRAW` — Always executed first if present.  
+
+### Examples:
+```python
+QUICK_BURST = [
+    ['UNISWAP', 'MATCHA_SWAP', 'OKX_WITHDRAW']
+]
+
+TRADER_HUSTLE = [
+    ["RANDOM_SWAPS"],
+    (
+        ['UNISWAP', 'BUNGEE_SWAP'],
+        ['RUBYSCORE_VOTE'],
+        ['WRAPPER_UNWRAPPER']
+    ),
+    ['SWAP_ALL_TO_ETH']
+]
+
+DEV_MARATHON = [
+    ["CONTRACT_DEPLOY"],
+    ["RANDOM_TXS"],
+    (
+        ['MATCHA_SWAP', 'OWLTO_SWAP', 'RELAY_SWAP'],
+        ['RUBYSCORE_VOTE'],
+        ['WRAPPER_UNWRAPPER']
+    ),
+    ['SWAP_ALL_TO_ETH']
+]
+
+CROSS_CHAIN_VOYAGE = [
+    ["RANDOM_TXS"]
+]
+```
+
+---
+
+## 🔷 Available Modules
+
+Configured in `config.py`:
+
+- `UNISWAP`
+- `MATCHA_SWAP`
+- `BUNGEE_SWAP`
+- `OWLTO_SWAP`
+- `RELAY_SWAP`
+- `RUBYSCORE_VOTE` (vote on [rubyscore.io](https://rubyscore.io/dashboard))
+- `WRAPPER_UNWRAPPER` (wrap/unwrap ETH)
+- `CONTRACT_DEPLOY`
+- `RANDOM_TXS` / `RANDOM_SWAPS` / `RANDOM_DEXes` mode
+- `SWAP_ALL_TO_ETH`
+- `OKX_WITHDRAW`
+
+### 🔷 Available Tokens -> 25+
 ---
 
 ## 📁 File Structure
 
-- `wallets.txt` — List of EVM private keys (starting with `0x`)
-- `proxies.txt` — Proxies in `username:password@host:port` format
-- `tasks.py` — Route constructor for execution flows
-- `config.py` — Module and global settings
+- `wallets.txt` — EVM private keys
+- `proxies.txt` — Proxies
+- `tasks.py` — Task routes
+- `config.py` — Module/global settings
 
 ---
 
 ## 🚀 Quickstart
-0. Activate VENV:
+0. Create venv:
    ```bash
    python -m venv menv
    source menv/bin/activate
    ```
 
-1. Install dependencies:
+1. Install deps:
    ```bash
    pip install -r requirements.txt
    ```
 
-2. Run the app:
+2. Run:
    ```bash
    python main.py
    ```
 
-   - `Generate new database` — Initialize fresh DB  
-   - `Work with existing database` — Operate on existing DB
+   Options:
+   - **Generate new database** — Fresh DB init  
+   - **Work with existing database** — Use saved DB  
 
 ---
 
 ## 🧠 About
 
-Built with ❤️ by **Finesse Labs** & **CF** — a collaboration by builders for builders.
+Built with 🔷 by **Finesse Labs** × **CF**  
+For builders, by builders.

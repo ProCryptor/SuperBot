@@ -9,7 +9,6 @@ from web3 import AsyncWeb3
 from loguru import logger
 
 from src.models.contracts import ERC20
-from src.utils.data.chains import UNICHAIN
 from src.utils.user.utils import Utils
 from src.utils.proxy_manager import Proxy
 
@@ -18,7 +17,7 @@ class Account(Utils):
     def __init__(
             self,
             private_key: str,
-            rpc=UNICHAIN.rpc,
+            rpc="",
             *,
             proxy: Proxy | None
     ) -> None:

@@ -7,7 +7,6 @@ from sys import stderr
 from datetime import datetime
 from abc import ABC, abstractmethod
 from random import uniform
-from config import CHAIN_NAME
 
 
 

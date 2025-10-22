@@ -1,51 +1,68 @@
 #==============================================================================================================
+# --- Base-chain settings -- #
 
-# --- Superchain settings -- #
-# Выполнение транзакций по отдельным чейнам, по спискам активностей из RandomDailyTxConfig
+TASKS = ["CROSS_CHAIN_VOYAGE"]
 
-TASKS = ["MODE_RANDOM_TX"]
+# ============= EXAMPLES =============
 
-TEST = [
-    ["BASE_RANDOM_TX"]
+ROUTE = [   
+    ['xxx'] # Customize your route here
 ]
 
-MULTICHAIN_ACTIVITY = [
-    ["OKX_WITHDRAW"],                                  
+QUICK_BURST = [
+    ['UNISWAP', 'MATCHA_SWAP', 'OKX_WITHDRAW']
+]
+
+TRADER_HUSTLE = [
+    ["RANDOM_SWAPS"],
     (
-        ["BASE_RANDOM_TX", "ZORA_RANDOM_TX"],          
-        ["SONEIUM_RANDOM_TX", "LISK_RANDOM_TX"]       
-    ),                                                                                   
-    ["SWELL_RANDOM_TX", "UNICHAIN_RANDOM_TX"]
+        ['UNISWAP', 'BUNGEE_SWAP'],
+        ['RUBYSCORE_VOTE'],
+        ['WRAPPER_UNWRAPPER']
+    ),
+    ['SWAP_ALL_TO_ETH']
 ]
 
-BRIDGE_CLAIM_SIMPLE = [
-    ["OKX_WITHDRAW"],                                  
-    ["STARGATE_BRIDGE", "DISPERSE_BRIDGE"],             
-    ["CLAIM_BADGES"]                             
+DEV_MARATHON = [
+    ["CONTRACT_DEPLOY"],
+    ["RANDOM_TXS"],
+    (
+        ['MATCHA_SWAP', 'OWLTO_SWAP', 'RELAY_SWAP'],
+        ['RUBYSCORE_VOTE'],
+        ['WRAPPER_UNWRAPPER']
+    ),
+    ['SWAP_ALL_TO_ETH']
 ]
 
+CROSS_CHAIN_VOYAGE = [
+    ["RANDOM_TXS"] 
+]
 
-OKX_WITHDRAW = ["OKX_WITHDRAW"]
-DISPERSE_BRIDGE = ["DISPERSE_BRIDGE"]
-BASE_RANDOM_TX = ["BASE_RANDOM_TX"]
-INK_RANDOM_TX = ["INK_RANDOM_TX"]
-OP_RANDOM_TX = ["OP_RANDOM_TX"]
-LISK_RANDOM_TX = ["LISK_RANDOM_TX"]
-UNICHAIN_RANDOM_TX = ["UNICHAIN_RANDOM_TX"]
-SONEIUM_RANDOM_TX = ["SONEIUM_RANDOM_TX"]
-ZORA_RANDOM_TX = ["ZORA_RANDOM_TX"]
-SWELL_RANDOM_TX = ["SWELL_RANDOM_TX"]
-MODE_RANDOM_TX = ["MODE_RANDOM_TX"]
-STARGATE_BRIDGE  = ["STARGATE_BRIDGE"]
+FULL = [
+    ["OKX_WITHDRAW"],
 
-CLAIM_BADGES = ["CLAIM_BADGES"]
+    ["RANDOM_TXS"],
+    ["RANDOM_SWAPS"],
+    ["SWAP_ALL_TO_ETH"],
+
+    ["UNISWAP"],
+    ['MATCHA_SWAP'],
+    ['BUNGEE_SWAP'],
+    ['OWLTO_SWAP'],
+    ['RELAY_SWAP'],
+
+    ["RUBYSCORE_VOTE"],
+    ["WRAPPER_UNWRAPPER"],
+    ["CONTRACT_DEPLOY"],
+]
+
 
 # Explanation:
 # - TASKS: The top-level list of tasks to execute.
 # - [ ]: Only one task from the list is chosen randomly.
 # - ( ): All tasks inside are executed in random order.
 # - Single string: Executes as is.
-# - 'OKX_WITHDRAW', 'DISPERSE_BRIDGE' - use only first
+# - 'OKX_WITHDRAW' - use only first
 # - Module-specific settings are in config.py
 
 #==============================================================================================================

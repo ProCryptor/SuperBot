@@ -6,7 +6,6 @@ from web3.contract import AsyncContract
 from web3.types import TxParams
 from loguru import logger
 
-from config import OKXWithdrawSettings, SuperBridgeSettings
 from src.models.bridge import BridgeConfig
 from src.utils.data.chains import chain_mapping
 from src.utils.data.tokens import tokens
