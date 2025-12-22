@@ -51,6 +51,12 @@ async def process_task(routes: list[Route]) -> None:
     await gather(*wallet_tasks)
 
 async def process_route(route: Route) -> None:
+    # 25% дней — кошелек ничего не делает (человеческое поведение)
+    if random.random() < 0.25:
+        logger.info(f'Wallet {route.wallet.address} skips activity today')
+        return
+
+async def process_route(route: Route) -> None:
     if route.wallet.proxy:
         if route.wallet.proxy.proxy_url and MOBILE_PROXY and ROTATE_IP:
             await route.wallet.proxy.change_ip()
@@ -59,6 +65,12 @@ async def process_route(route: Route) -> None:
 
     module_tasks = []
     for task in route.tasks:
+
+    # 20% шанс пропустить задачу
+    if random.random() < 0.2:
+        logger.info(f'Skipping task {task} (human randomness)')
+        continue
+
         module_tasks.append(create_task(process_module(task, route, private_key)))
 
         random_sleep = random.randint(PAUSE_BETWEEN_MODULES[0], PAUSE_BETWEEN_MODULES[1]) if isinstance(
@@ -66,16 +78,21 @@ async def process_route(route: Route) -> None:
 
         logger.info(f'Sleeping for {random_sleep} seconds before next module...')
         await sleep(random_sleep)
+        # 10% шанс долгой паузы (человек отвлёкся)
+    if random.random() < 0.1:
+        long_sleep = random.randint(300, 1800)
+        logger.info(f'Long human pause: {long_sleep} seconds')
+        await sleep(long_sleep)
 
     await gather(*module_tasks)
 
-    if TG_BOT_TOKEN and TG_USER_ID:
-        tg_app = TGApp(
-            token=TG_BOT_TOKEN,
-            tg_id=TG_USER_ID,
-            private_key=private_key
+    # if TG_BOT_TOKEN and TG_USER_ID:
+       # tg_app = TGApp(
+            # token=TG_BOT_TOKEN,
+            # tg_id=TG_USER_ID,
+            # private_key=private_key
         )
-        await tg_app.send_message()
+        # await tg_app.send_message()
 
 async def process_module(task: str, route: Route, private_key: str, chain_name: str = "BASE") -> None:
     chain = Chain(
