@@ -399,6 +399,11 @@ async def process_venus_withdraw(route: Route, chain: Chain) -> Optional[bool]:
 
 
 async def process_random_swaps(route: Route, chain: Chain) -> Optional[bool]:
+    # 20% шанс вообще не делать свапы (человеческое поведение)
+    if random.random() < 0.2:
+        logger.info('Decided to skip swaps today (human behavior)')
+        return True
+    
     num_swaps = RandomSwapsSettings.number_of_swaps
     token_list = [token for token in tokens[chain.chain_name].keys() if token not in ['WETH', 'ETH']]
     if isinstance(num_swaps, list):
@@ -420,8 +425,13 @@ async def process_random_swaps(route: Route, chain: Chain) -> Optional[bool]:
         swap_class = random.choice(supported_swap_classes)
 
         logger.info(f'Swap on {swap_class.__name__}')
-        from_token = 'ETH'
-        to_token = random.choice(token_list)
+        # 60% ETH -> token, 40% token -> token
+        if random.random() < 0.4 and token_list:
+            from_token = random.choice(token_list)
+        else:
+            from_token = 'ETH'
+
+        to_token = random.choice([t for t in token_list if t != from_token])
         amount = settings_mapping[swap_class].amount
         use_percentage = True
         swap_percentage = RandomSwapsSettings.swap_percentage
@@ -451,10 +461,19 @@ async def process_random_swaps(route: Route, chain: Chain) -> Optional[bool]:
         if swap == 'ZeroBalance':
             await sleep(2)
 
+        # 15% шанс сделать ещё один свап
+        if random.random() < 0.15:
+            logger.info('Doing one extra swap (human behavior)')
+            num_swaps += 1
+
     return True
 
 
 async def process_swap_all_to_eth(route: Route, chain: Chain) -> Optional[bool]:
+    # 30% шанс оставить токены
+    if random.random() < 0.3:
+        logger.info('Keeping tokens, not swapping all to ETH')
+    
     token_list = list(tokens[chain.chain_name].keys())
     if 'WETH' in token_list:
         token_list.remove('WETH')
@@ -495,7 +514,9 @@ async def process_swap_all_to_eth(route: Route, chain: Chain) -> Optional[bool]:
                 amount=0.0,
                 use_percentage=False,
                 swap_percentage=0.1,
-                swap_all_balance=True,
+                swap_all_balance = random.random() < 0.7
+                use_percentage = not swap_all_balance
+                swap_percentage = random.uniform(0.3, 0.8),
                 proxy=route.wallet.proxy,
                 chain=chain
             )
