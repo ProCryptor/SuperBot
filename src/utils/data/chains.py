@@ -12,6 +12,39 @@ BASE = Chain(
     native_token='ETH'
 )
 
+OPTIMISM = Chain(
+    chain_id=10,
+    rpc='https://mainnet.optimism.io',
+    scan='https://optimistic.etherscan.io/tx',
+    native_token='ETH'
+)
+
+ARBITRUM = Chain(
+    chain_id=42161,
+    rpc='https://arb1.arbitrum.io/rpc',
+    scan='https://arbiscan.io/tx',
+    native_token='ETH'
+)
+
+ETHEREUM = Chain(
+    chain_id=1,
+    rpc='https://rpc.ankr.com/eth',
+    scan='https://etherscan.io/tx',
+    native_token='ETH'
+)
+
+LINEA = Chain(
+    chain_id=59144,
+    rpc='https://rpc.linea.build',
+    scan='https://lineascan.build/tx',
+    native_token='ETH'
+)
+
 chain_mapping = {
     'BASE': BASE,
+    'OPTIMISM': OPTIMISM,
+    'ARBITRUM': ARBITRUM,
+    'ETHEREUM': ETHEREUM,
+    'LINEA': LINEA,
 }
+
