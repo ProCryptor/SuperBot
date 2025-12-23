@@ -74,8 +74,10 @@ async def process_route(route: Route) -> None:
     tx_count = planner.get_transactions_count(day_type)
 
     logger.info(
-        f'Wallet {route.wallet.private_key[:6]}... | Day: {day_type} | Planned tx: {tx_count}'
+        f'Wallet {wallet_address} | '
+        f'Chain: {chain_name} | Day: {day_type} | Planned tx: {tx_count}'
     )
+
 
     # Прокси / IP
     if route.wallet.proxy and MOBILE_PROXY and ROTATE_IP:
@@ -83,7 +85,7 @@ async def process_route(route: Route) -> None:
 
     private_key = route.wallet.private_key
 
-        is_bridge_day = planner.is_bridge_day()
+    is_bridge_day = planner.is_bridge_day()
 
     if is_bridge_day:
         logger.info(f'Planner: today is BRIDGE day (logic later)')
