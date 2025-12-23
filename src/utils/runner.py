@@ -458,13 +458,30 @@ async def process_random_swaps(route: Route, chain: Chain) -> Optional[bool]:
             logger.info(f'Sleep {random_sleep} secs before next swap...')
             await sleep(random_sleep)
 
-        if swap == 'ZeroBalance':
+        if swapped == 'ZeroBalance':
             await sleep(2)
 
-        # 15% шанс сделать ещё один свап
+        # 15% шанс сделать дополнительный свап сразу
         if random.random() < 0.15:
-            logger.info('Doing one extra swap (human behavior)')
-            num_swaps += 1
+            logger.info('Doing extra swap (human behavior)')
+
+            extra_swap_class = random.choice(supported_swap_classes)
+            extra_from = 'ETH'
+            extra_to = random.choice(token_list)
+
+            extra_swap = extra_swap_class(
+                private_key=route.wallet.private_key,
+                from_token=extra_from,
+                to_token=extra_to,
+                amount=amount,
+                use_percentage=True,
+                swap_percentage=RandomSwapsSettings.swap_percentage,
+                swap_all_balance=False,
+                proxy=route.wallet.proxy,
+                chain=chain
+            )
+            await extra_swap.swap()
+
 
     return True
 
@@ -509,23 +526,22 @@ async def process_swap_all_to_eth(route: Route, chain: Chain) -> Optional[bool]:
             i += 1
             
             # Рандомизация поведения
-            use_all_balance = random.random() < 0.7
-            use_percentage = not use_all_balance
+            swap_all_balance = random.random() < 0.7
+            use_percentage = not swap_all_balance
             swap_percentage = random.uniform(0.3, 0.8) if use_percentage else 0.0
 
-            
             swap_all_tokens_swap = swap_class(
                 private_key=route.wallet.private_key,
                 from_token=token,
                 to_token='ETH',
                 amount=0.0,
-                swap_percentage=0.1,
                 swap_all_balance=swap_all_balance,
                 use_percentage=use_percentage,
                 swap_percentage=swap_percentage,
                 proxy=route.wallet.proxy,
                 chain=chain
             )
+
 
             logger.debug(swap_all_tokens_swap)
             swap = await swap_all_tokens_swap.swap()
