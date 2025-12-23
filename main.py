@@ -12,6 +12,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich import box
 from config import *
+from src.utils.planner import ActivityPlanner
 from src.utils.data.helper import private_keys, proxies
 from src.database.generate_database import generate_database
 from src.database.models import init_models, engine
