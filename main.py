@@ -56,6 +56,8 @@ async def process_task(routes: list[Route]) -> None:
 
 async def process_route(route: Route) -> None:
     planner = ActivityPlanner()
+    wallet_id = route.wallet.private_key[:10]
+    planner.personality = planner.assign_wallet_personality(wallet_id)
 
     from src.utils.user.account import Account  # импорт (если его ещё нет в начале файла)
 
