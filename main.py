@@ -22,6 +22,7 @@ from src.utils.retrieve_route import get_routes
 from src.models.route import Route
 from src.models.chain import Chain
 from src.utils.data.chains import chain_mapping
+from src.utils.memory import MemoryManager
 from src.utils.tg_app.telegram_notifications import TGApp
 
 from src.ui.interface import get_module, LOGO_LINES, PROJECT_INFO, clear_screen, get_module_menu
@@ -85,6 +86,12 @@ async def process_route(route: Route) -> None:
 
     private_key = route.wallet.private_key
 
+    wallet_id = route.wallet.private_key[:10]
+
+    if not memory.can_bridge_today(wallet_id):
+        logger.info('Memory: bridge cooldown active')
+        is_bridge_day = False
+
     is_bridge_day = planner.is_bridge_day(day_type)
 
     if is_bridge_day:
@@ -105,6 +112,10 @@ async def process_route(route: Route) -> None:
     for task in tasks_today:
         if task == 'BRIDGE_RANDOM':
             await process_chain_disperse(route)
+            memory.remember_bridge(wallet_id)
+            memory.remember_task(wallet_id, task)
+        if memory.was_task_recent(wallet_id, task):
+            logger.info(f'Memory: skipping repeated task {task}')
             continue
 
         module_tasks.append(
@@ -124,7 +135,7 @@ async def process_route(route: Route) -> None:
             long_sleep = random.randint(300, 1800)
             logger.info(f'Human pause: {long_sleep} seconds')
             await sleep(long_sleep)
-
+                     
     await gather(*module_tasks)
 
     # Пауза после дня (если нужно)
