@@ -90,6 +90,8 @@ async def process_route(route: Route) -> None:
     if is_bridge_day:
         logger.info(f'Planner: today is BRIDGE day (logic later)')
 
+    if is_bridge_day and 'BRIDGE_RANDOM' not in route.tasks:
+        route.tasks.append('BRIDGE_RANDOM')
     
     # Берём ТОЛЬКО нужное количество задач
     tasks_today = route.tasks.copy()
