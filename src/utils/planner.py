@@ -128,6 +128,13 @@ class ActivityPlanner:
 
         return random.random() < max(0.05, min(base_chance, 0.8))
 
+    from src.utils.data.bridges import BRIDGES
+
+    def choose_bridge_target(self, current_chain: str) -> str | None:
+        targets = BRIDGES.get(current_chain, [])
+        if not targets:
+            return None
+        return random.choice(targets)
 
     def get_weekday_modifier(self) -> float:
         """
