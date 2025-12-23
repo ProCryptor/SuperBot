@@ -44,4 +44,29 @@ class ActivityPlanner:
         if day_type == 'LIGHT':
             return random.randint(*self.pause_days_after_light)
         return random.randint(*self.pause_days_after_full)
+        def get_chain_for_today(self) -> str:
+        """
+        Выбор сети на день (multi-chain поведение)
+        """
+        weights = {
+            'BASE': 40,
+            'OPTIMISM': 20,
+            'ARBITRUM': 20,
+            'LINEA': 15,
+            'ETHEREUM': 5
+        }
 
+        chain = random.choices(
+            population=list(weights.keys()),
+            weights=list(weights.values()),
+            k=1
+        )[0]
+
+        logger.info(f'Planner: selected chain for today → {chain}')
+        return chain
+
+    def is_bridge_day(self) -> bool:
+        """
+        Bridge-день (пока без реализации логики)
+        """
+        return random.random() < 0.15  # 15% дней
