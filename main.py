@@ -36,6 +36,8 @@ if sys.platform == 'win32':
 
 console = Console()
 
+memory = MemoryManager()
+
 async def process_task(routes: list[Route]) -> None:
     if not routes:
         logger.success('All tasks are completed')
@@ -88,11 +90,11 @@ async def process_route(route: Route) -> None:
 
     wallet_id = route.wallet.private_key[:10]
 
+    is_bridge_day = planner.is_bridge_day(day_type)
+
     if not memory.can_bridge_today(wallet_id):
         logger.info('Memory: bridge cooldown active')
         is_bridge_day = False
-
-    is_bridge_day = planner.is_bridge_day(day_type)
 
     if is_bridge_day:
         logger.info(f'Planner: today is BRIDGE day (logic later)')
@@ -110,17 +112,22 @@ async def process_route(route: Route) -> None:
     module_tasks = []
 
     for task in tasks_today:
+        
+        if memory.was_task_recent(wallet_id, task):
+            logger.info(f'Memory: skipping repeated task {task}')
+            continue
+        
         if task == 'BRIDGE_RANDOM':
             await process_chain_disperse(route)
             memory.remember_bridge(wallet_id)
             memory.remember_task(wallet_id, task)
-        if memory.was_task_recent(wallet_id, task):
-            logger.info(f'Memory: skipping repeated task {task}')
             continue
-
+    
         module_tasks.append(
             create_task(process_module(task, route, private_key, chain_name=chain_name))
         )
+
+        memory.remember_chain(wallet_id, chain_name)
 
         random_sleep = random.randint(
             PAUSE_BETWEEN_MODULES[0],
