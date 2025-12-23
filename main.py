@@ -17,7 +17,6 @@ from src.utils.data.helper import private_keys, proxies
 from src.database.generate_database import generate_database
 from src.database.models import init_models, engine
 from src.utils.data.mappings import module_handlers
-from src.utils.data.mappings import module_handlers
 from src.utils.manage_tasks import manage_tasks
 from src.utils.retrieve_route import get_routes
 from src.models.route import Route
