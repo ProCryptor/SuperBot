@@ -613,7 +613,7 @@ async def process_badges(route: Route) -> Optional[bool]:
 
 AVAILABLE_ACTIVITIES = {
     'BASE': ['UNISWAP', 'SUSHI_SWAP', 'MATCHA_SWAP', 'BUNGEE_SWAP', 'OWLTO_SWAP', 'SWAP_ALL_TO_ETH', 'RANDOM_SWAPS',
-             'RELAY_SWAP', 'OKU_SWAP', 'DEFILLAMA_SWAP', 'RUBYSCORE_VOTE', 'WRAPPER_UNWRAPPER', 'CONTRACT_DEPLOY']
+             'RELAY_SWAP', 'OKU_SWAP', 'DEFILLAMA_SWAP', 'RUBYSCORE_VOTE', 'WRAPPER_UNWRAPPER', 'CONTRACT_DEPLOY', 'BRIDGE_RANDOM']
 }
 
 function_handlers = {
@@ -627,6 +627,7 @@ function_handlers = {
     'RUBYSCORE_VOTE': process_rubyscore_vote,
     'CONTRACT_DEPLOY': process_deploy,
     'WRAPPER_UNWRAPPER': process_wrapper_unwrapper
+    'BRIDGE_RANDOM': process_chain_disperse
 }
 
 SUPPORTED_SWAPS_BY_CHAIN = {
