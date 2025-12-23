@@ -85,7 +85,7 @@ async def process_route(route: Route) -> None:
 
     private_key = route.wallet.private_key
 
-    is_bridge_day = planner.is_bridge_day()
+    is_bridge_day = planner.is_bridge_day(day_type)
 
     if is_bridge_day:
         logger.info(f'Planner: today is BRIDGE day (logic later)')
