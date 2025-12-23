@@ -103,7 +103,12 @@ async def process_route(route: Route) -> None:
         logger.info(f'Planner: today is BRIDGE day (logic later)')
 
     # Берём ТОЛЬКО нужное количество задач
-    tasks_today = route.tasks.copy()
+    from src.utils.data.chain_modules import CHAIN_MODULES
+
+    current_chain = route.current_chain
+    available_tasks = CHAIN_MODULES.get(current_chain, [])
+
+    tasks_today = available_tasks.copy()
     random.shuffle(tasks_today)
     tasks_today = tasks_today[:tx_count]
 
@@ -124,6 +129,18 @@ async def process_route(route: Route) -> None:
             await process_chain_disperse(route)
             memory.remember_bridge(wallet_id)
             memory.remember_task(wallet_id, task)
+            continue
+
+        if task == 'BRIDGE_RANDOM':
+            await process_chain_disperse(route)
+            memory.remember_bridge(wallet_id)
+
+            # пересобираем задачи под новую сеть
+            current_chain = route.current_chain
+            available_tasks = CHAIN_MODULES.get(current_chain, [])
+            random.shuffle(available_tasks)
+            tasks_today = available_tasks[:tx_count]
+
             continue
     
         module_tasks.append(
