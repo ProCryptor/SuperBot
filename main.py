@@ -106,9 +106,8 @@ async def process_route(route: Route) -> None:
     module_tasks = []
 
     for task in tasks_today:
-        # 20% шанс пропустить задачу
-        if random.random() < 0.2:
-            logger.info(f'Skipping task {task} (human randomness)')
+        if task == 'BRIDGE_RANDOM':
+            await process_chain_disperse(route)
             continue
 
         module_tasks.append(
