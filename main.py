@@ -58,6 +58,8 @@ async def process_route(route: Route) -> None:
     if not planner.should_work_today():
         logger.info(f'Wallet {route.wallet.private_key[:6]}... skips today')
         return
+        
+    chain_name = planner.get_chain_for_today()
 
     # Тип дня и количество tx
     day_type = planner.get_day_type()
@@ -73,6 +75,12 @@ async def process_route(route: Route) -> None:
 
     private_key = route.wallet.private_key
 
+        is_bridge_day = planner.is_bridge_day()
+
+    if is_bridge_day:
+        logger.info(f'Planner: today is BRIDGE day (logic later)')
+
+    
     # Берём ТОЛЬКО нужное количество задач
     tasks_today = route.tasks.copy()
     random.shuffle(tasks_today)
