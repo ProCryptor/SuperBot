@@ -52,10 +52,62 @@ async def process_task(routes: list[Route]) -> None:
     await gather(*wallet_tasks)
 
 async def process_route(route: Route) -> None:
-    # 25% дней — кошелек ничего не делает (человеческое поведение)
-    if random.random() < 0.25:
-        logger.info(f'Wallet {route.wallet.address} skips activity today')
+    planner = ActivityPlanner()
+
+    # Решаем: работает кошелек сегодня или нет
+    if not planner.should_work_today():
+        logger.info(f'Wallet {route.wallet.address} skips today')
         return
+
+    # Тип дня
+    day_type = planner.get_day_type()
+    tx_count = planner.get_transactions_count(day_type)
+
+    logger.info(
+        f'Wallet {route.wallet.address} | Day: {day_type} | Planned tx: {tx_count}'
+    )
+
+    # Прокси / IP
+    if route.wallet.proxy:
+        if route.wallet.proxy.proxy_url and MOBILE_PROXY and ROTATE_IP:
+            await route.wallet.proxy.change_ip()
+
+    private_key = route.wallet.private_key
+
+    # Берём ТОЛЬКО нужное количество задач
+    tasks_today = route.tasks.copy()
+    random.shuffle(tasks_today)
+    tasks_today = tasks_today[:tx_count]
+
+    module_tasks = []
+
+    for task in tasks_today:
+        module_tasks.append(
+            create_task(process_module(task, route, private_key))
+        )
+
+        random_sleep = random.randint(
+            PAUSE_BETWEEN_MODULES[0],
+            PAUSE_BETWEEN_MODULES[1]
+        ) if isinstance(PAUSE_BETWEEN_MODULES, list) else PAUSE_BETWEEN_MODULES
+
+        logger.info(f'Sleeping {random_sleep} seconds before next module...')
+        await sleep(random_sleep)
+
+        # 10% шанс длинной человеческой паузы
+        if random.random() < 0.1:
+            long_sleep = random.randint(300, 1800)
+            logger.info(f'Human pause: {long_sleep} seconds')
+            await sleep(long_sleep)
+
+    await gather(*module_tasks)
+
+    # Пауза после дня
+    pause_days = planner.get_pause_days_after(day_type)
+    if pause_days > 0:
+        sleep_time = pause_days * 24 * 60 * 60
+        logger.info(f'Planner pause: {pause_days} day(s)')
+        await sleep(sleep_time)
 
 async def process_route(route: Route) -> None:
     if route.wallet.proxy:
@@ -67,10 +119,10 @@ async def process_route(route: Route) -> None:
     module_tasks = []
     for task in route.tasks:
 
-    # 20% шанс пропустить задачу
-    if random.random() < 0.2:
-        logger.info(f'Skipping task {task} (human randomness)')
-        continue
+        # 20% шанс пропустить задачу
+        if random.random() < 0.2:
+            logger.info(f'Skipping task {task} (human randomness)')
+            continue
 
         module_tasks.append(create_task(process_module(task, route, private_key)))
 
