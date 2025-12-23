@@ -54,23 +54,22 @@ async def process_task(routes: list[Route]) -> None:
 async def process_route(route: Route) -> None:
     planner = ActivityPlanner()
 
-    # Решаем: работает кошелек сегодня или нет
+    # Решаем: работает кошелёк сегодня или нет
     if not planner.should_work_today():
-        logger.info(f'Wallet {route.wallet.address} skips today')
+        logger.info(f'Wallet {route.wallet.private_key[:6]}... skips today')
         return
 
-    # Тип дня
+    # Тип дня и количество tx
     day_type = planner.get_day_type()
     tx_count = planner.get_transactions_count(day_type)
 
     logger.info(
-        f'Wallet {route.wallet.address} | Day: {day_type} | Planned tx: {tx_count}'
+        f'Wallet {route.wallet.private_key[:6]}... | Day: {day_type} | Planned tx: {tx_count}'
     )
 
     # Прокси / IP
-    if route.wallet.proxy:
-        if route.wallet.proxy.proxy_url and MOBILE_PROXY and ROTATE_IP:
-            await route.wallet.proxy.change_ip()
+    if route.wallet.proxy and MOBILE_PROXY and ROTATE_IP:
+        await route.wallet.proxy.change_ip()
 
     private_key = route.wallet.private_key
 
@@ -82,6 +81,7 @@ async def process_route(route: Route) -> None:
     module_tasks = []
 
     for task in tasks_today:
+        # 20% шанс пропустить задачу
         if random.random() < 0.2:
             logger.info(f'Skipping task {task} (human randomness)')
             continue
@@ -104,51 +104,13 @@ async def process_route(route: Route) -> None:
 
     await gather(*module_tasks)
 
-    # Пауза после дня
+    # Пауза после дня (если нужно)
     pause_days = planner.get_pause_days_after(day_type)
     if pause_days > 0:
-        sleep_time = pause_days * 24 * 60 * 60
-        logger.info(f'Planner pause: {pause_days} day(s)')
+        sleep_time = pause_days * 86400  # 24 * 60 * 60
+        logger.info(f'Planner pause: {pause_days} day(s) ({sleep_time // 3600} hours)')
         await sleep(sleep_time)
-
-async def process_route(route: Route) -> None:
-    if route.wallet.proxy:
-        if route.wallet.proxy.proxy_url and MOBILE_PROXY and ROTATE_IP:
-            await route.wallet.proxy.change_ip()
-
-    private_key = route.wallet.private_key
-
-    module_tasks = []
-    for task in route.tasks:
-
-        # 20% шанс пропустить задачу
-        if random.random() < 0.2:
-            logger.info(f'Skipping task {task} (human randomness)')
-            continue
-
-        module_tasks.append(create_task(process_module(task, route, private_key)))
-
-        random_sleep = random.randint(PAUSE_BETWEEN_MODULES[0], PAUSE_BETWEEN_MODULES[1]) if isinstance(
-            PAUSE_BETWEEN_MODULES, list) else PAUSE_BETWEEN_MODULES
-
-        logger.info(f'Sleeping for {random_sleep} seconds before next module...')
-        await sleep(random_sleep)
-        # 10% шанс долгой паузы (человек отвлёкся)
-    if random.random() < 0.1:
-        long_sleep = random.randint(300, 1800)
-        logger.info(f'Long human pause: {long_sleep} seconds')
-        await sleep(long_sleep)
-
-    await gather(*module_tasks)
-
-    # if TG_BOT_TOKEN and TG_USER_ID:
-       # tg_app = TGApp(
-            # token=TG_BOT_TOKEN,
-            # tg_id=TG_USER_ID,
-            # private_key=private_key
-        )
-        # await tg_app.send_message()
-
+    
 async def process_module(task: str, route: Route, private_key: str, chain_name: str = "BASE") -> None:
     chain = Chain(
         chain_name=chain_name,
