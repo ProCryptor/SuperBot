@@ -40,13 +40,21 @@ class ActivityPlanner:
         modifier = self.get_weekday_modifier()
         roll = random.random()
 
-        adjusted_skip = self.skip_day_chance / modifier
+        base_skip = self.skip_day_chance
+
+        if self.personality == 'LAZY':
+            base_skip += 0.25
+        elif self.personality == 'ACTIVE':
+            base_skip -= 0.15
+
+        adjusted_skip = base_skip / modifier
+        adjusted_skip = min(max(adjusted_skip, 0.05), 0.9)
 
         if roll < adjusted_skip:
-            logger.info('Planner: skip day (weekly behavior)')
+            logger.info(f'Planner: skip day ({self.personality})')
             return False
 
-        logger.info('Planner: active day')
+        logger.info(f'Planner: active day ({self.personality})')
         return True
         
     def get_day_type(self) -> str:
@@ -63,6 +71,11 @@ class ActivityPlanner:
             base = random.randint(*self.light_day_tx_range)
         else:
             base = random.randint(*self.full_day_tx_range)
+
+        if self.personality == 'ACTIVE':
+            base += random.randint(1, 3)
+        elif self.personality == 'LAZY':
+            base = max(1, base - 1)
 
         tx_count = int(base * modifier)
         return max(1, tx_count)
@@ -94,9 +107,15 @@ class ActivityPlanner:
         return chain
 
     def is_bridge_day(self, day_type: str) -> bool:
-        if day_type == 'FULL':
-            return random.random() < 0.35
-        return random.random() < 0.15
+        base_chance = 0.15 if day_type == 'LIGHT' else 0.35
+
+        if self.personality == 'BRIDGE_LOVER':
+            base_chance += 0.25
+        elif self.personality == 'LAZY':
+            base_chance -= 0.10
+
+    return random.random() < max(0.05, min(base_chance, 0.8))
+
 
     def get_weekday_modifier(self) -> float:
         """
