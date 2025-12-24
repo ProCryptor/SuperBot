@@ -145,15 +145,7 @@ async def process_route(route: Route) -> None:
                 memory.remember_task(wallet_id, task)
             break    
 
-                # пересобираем задачи под новую сеть
-                current_chain = route.current_chain
-                available_tasks = CHAIN_MODULES.get(current_chain, [])
-                random.shuffle(available_tasks)
-                tasks_today = available_tasks[:tx_count]
-
-            continue
-
-    
+               
         module_tasks.append(
             create_task(
                 process_module(
