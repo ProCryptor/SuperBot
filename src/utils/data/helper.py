@@ -7,9 +7,7 @@ from aiohttp import ClientSession
 from rich import print
 import time
 
-with open('config.py', 'r', encoding='utf-8-sig') as file:
-    module_config = file.read()
-exec(module_config)
+from config import *
 
 PROXY_PATTERN = re.compile(r'^[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+@[a-zA-Z0-9.-]+:\d+$')
 PRIVATE_KEY_PATTERN = re.compile(r'^0x[a-fA-F0-9]{64}$')
