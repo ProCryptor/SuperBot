@@ -29,6 +29,8 @@ from src.ui.interface import get_module, LOGO_LINES, PROJECT_INFO, clear_screen,
 # Настройка логгеров
 logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 logging.basicConfig(level=logging.CRITICAL)
+logger.add("logs/app.log", rotation="10 MB", retention="7 days")
+
 
 if sys.platform == 'win32':
     set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
