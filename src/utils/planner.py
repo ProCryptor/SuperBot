@@ -103,7 +103,6 @@ class ActivityPlanner:
         logger.info(f'Planner: selected chain for today → {chain}')
         return chain
 
-
         return random.choice(chains)
         weights = {
             'BASE': 40,
