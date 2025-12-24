@@ -44,8 +44,12 @@ async def process_task(routes: list[Route]) -> None:
         return
 
     wallet_tasks = []
-    for route in routes:
-        wallet_tasks.append(create_task(process_route(route)))
+        for route in routes:
+            wallet_tasks.append(
+        create_task(
+            safe_process_route(route)
+        )
+    )
 
         time_to_pause = random.randint(PAUSE_BETWEEN_WALLETS[0], PAUSE_BETWEEN_WALLETS[1]) \
             if isinstance(PAUSE_BETWEEN_WALLETS, list) else PAUSE_BETWEEN_WALLETS
@@ -53,6 +57,13 @@ async def process_task(routes: list[Route]) -> None:
         await sleep(time_to_pause)
 
     await gather(*wallet_tasks)
+
+async def safe_process_route(route: Route):
+    try:
+        await process_route(route)
+    except Exception as e:
+        logger.error(f'Wallet {route.wallet.private_key[:6]} crashed: {e}')
+
 
 async def process_route(route: Route) -> None:
     planner = ActivityPlanner()
@@ -174,18 +185,28 @@ async def process_route(route: Route) -> None:
         logger.info(f'Planner pause: {pause_days} day(s) ({sleep_time // 3600} hours)')
         await sleep(sleep_time)
     
-async def process_module(task: str, route: Route, private_key: str, chain_name: str = "BASE") -> None:
-    chain = Chain(
-        chain_name=chain_name,
-        native_token=chain_mapping[chain_name].native_token,
-        rpc=chain_mapping[chain_name].rpc,
-        chain_id=chain_mapping[chain_name].chain_id
-    )
-    completed = await module_handlers[task](route, chain)
-    if completed:
-        await manage_tasks(private_key, task)
+async def process_module(task: str, route: Route, private_key: str, chain_name: str):
+    retries = 3
 
-from src.ui.interface import get_module, clear_screen, LOGO_LINES, PROJECT_INFO
+    for attempt in range(1, retries + 1):
+        try:
+            chain = Chain(
+                chain_name=chain_name,
+                native_token=chain_mapping[chain_name].native_token,
+                rpc=chain_mapping[chain_name].rpc,
+                chain_id=chain_mapping[chain_name].chain_id
+            )
+
+            completed = await module_handlers[task](route, chain)
+            if completed:
+                await manage_tasks(private_key, task)
+            return
+
+        except Exception as e:
+            logger.error(f'{task} failed (attempt {attempt}/{retries}): {e}')
+            await sleep(random.randint(10, 30))
+
+    logger.error(f'{task} permanently failed after {retries} retries')
 
 async def main_loop() -> None:
     clear_screen()  # очищаем экран только один раз при первом запуске
