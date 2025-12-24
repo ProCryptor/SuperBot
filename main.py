@@ -147,9 +147,9 @@ async def process_route(route: Route) -> None:
 
     for task in tasks_today:
         
-    if memory.was_task_recent(wallet_id, task):
-        logger.info(f'Memory: skipping repeated task {task}')
-        continue
+        if memory.was_task_recent(wallet_id, task):
+            logger.info(f'Memory: skipping repeated task {task}')
+            continue
         
     if task == 'BRIDGE_RANDOM':
         success = await process_chain_disperse(route)
@@ -163,7 +163,7 @@ async def process_route(route: Route) -> None:
             random.shuffle(available_tasks)
             tasks_today = available_tasks[:tx_count]
 
-        break
+        continue
                
         module_tasks.append(
             create_task(
