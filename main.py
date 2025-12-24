@@ -210,7 +210,10 @@ async def process_module(task: str, route: Route, private_key: str, chain_name: 
                 chain_id=chain_mapping[chain_name].chain_id
             )
 
-            completed = await module_handlers[task](route, chain)
+            from src.utils.data.chain_modules import MODULE_HANDLERS
+
+            completed = await MODULE_HANDLERS[task](route, chain)
+
             if completed:
                 await manage_tasks(private_key, task)
             return
