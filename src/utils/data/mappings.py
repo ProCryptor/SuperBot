@@ -2,7 +2,7 @@
 # from src.utils.legacy.runner import *
 
 module_handlers = {
-    'OKX_WITHDRAW': process_cex_withdraw,
+    # 'OKX_WITHDRAW': process_cex_withdraw,
 
     'UNISWAP': process_uniswap,
     'MATCHA_SWAP': process_matcha_swap,
