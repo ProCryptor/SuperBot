@@ -36,3 +36,4 @@ class Wallet(BaseModel):
 class Route(BaseModel):
     tasks: List[str]
     wallet: Wallet
+    current_chain: str | None = None
