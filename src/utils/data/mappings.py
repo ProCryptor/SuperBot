@@ -1,4 +1,5 @@
-from src.utils.legacy.runner import *
+# legacy runner removed — теперь используем новый хендлер-сет
+# from src.utils.legacy.runner import *
 
 module_handlers = {
     'OKX_WITHDRAW': process_cex_withdraw,
