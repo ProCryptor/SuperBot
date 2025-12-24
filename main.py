@@ -149,19 +149,19 @@ async def process_route(route: Route) -> None:
             logger.info(f'Memory: skipping repeated task {task}')
             continue
         
-    if task == 'BRIDGE_RANDOM':
-        success = await process_chain_disperse(route)
-        if success:
-            memory.remember_bridge(wallet_id)
-            memory.remember_task(wallet_id, task)
+        if task == 'BRIDGE_RANDOM':
+            success = await process_chain_disperse(route)
+            if success:
+                memory.remember_bridge(wallet_id)
+                memory.remember_task(wallet_id, task)
 
-            # пересборка под новую сеть
-            current_chain = route.current_chain
-            available_tasks = CHAIN_MODULES.get(current_chain, [])
-            random.shuffle(available_tasks)
-            tasks_today = available_tasks[:tx_count]
+                # пересборка под новую сеть
+                current_chain = route.current_chain
+                available_tasks = CHAIN_MODULES.get(current_chain, [])
+                random.shuffle(available_tasks)
+                tasks_today = available_tasks[:tx_count]
 
-        continue
+            break
                
         module_tasks.append(
             create_task(
