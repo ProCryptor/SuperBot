@@ -106,25 +106,7 @@ class ActivityPlanner:
 
         logger.info(f'Planner: selected chain → {chain}')
         return chain
-
-        return random.choice(chains)
-        weights = {
-            'BASE': 40,
-            'OPTIMISM': 20,
-            'ARBITRUM': 20,
-            'LINEA': 15,
-            'ETHEREUM': 5
-        }
-
-        chain = random.choices(
-            population=list(weights.keys()),
-            weights=list(weights.values()),
-            k=1
-        )[0]
-
-        logger.info(f'Planner: selected chain for today → {chain}')
-        return chain
-
+        
     def is_bridge_day(self, day_type: str) -> bool:
         base_chance = 0.15 if day_type == 'LIGHT' else 0.35
 
