@@ -64,6 +64,10 @@ class ActivityPlanner:
             return 'LIGHT'
         return 'FULL'
 
+    def choose_chain(self, wallet_id):
+        chain = self.get_chain_for_today()
+        return chain
+
     def get_transactions_count(self, day_type: str) -> int:
         modifier = self.get_weekday_modifier()
 
