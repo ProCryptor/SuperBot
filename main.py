@@ -86,7 +86,7 @@ async def process_route(route: Route) -> None:
         logger.info(f'Wallet {route.wallet.private_key[:6]}... skips today')
         return
         
-        # === CHAIN SELECTION WITH MEMORY ===
+    # === CHAIN SELECTION WITH MEMORY ===
     chain_name = planner.get_chain_for_today()
 
     # --- MEMORY: не ходим в одну и ту же сеть подряд ---
