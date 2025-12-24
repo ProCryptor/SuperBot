@@ -110,6 +110,7 @@ async def process_route(route: Route) -> None:
         f'Chain: {chain_name} | Day: {day_type} | Planned tx: {tx_count}'
     )
 
+    is_bridge_day = planner.is_bridge_day(day_type)
 
     # Прокси / IP
     if route.wallet.proxy and MOBILE_PROXY and ROTATE_IP:
@@ -117,8 +118,7 @@ async def process_route(route: Route) -> None:
 
     private_key = route.wallet.private_key
 
-    is_bridge_day = planner.is_bridge_day(day_type)
-
+    
     if not memory.can_bridge_today(wallet_id):
         logger.info('Memory: bridge cooldown active')
         is_bridge_day = False
