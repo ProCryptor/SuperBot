@@ -87,8 +87,12 @@ async def process_route(route: Route) -> None:
         # === CHAIN SELECTION WITH MEMORY ===
     chain_name = planner.get_chain_for_today()
 
+    # --- MEMORY: не ходим в одну и ту же сеть подряд ---
     last_chain = memory.get_last_chain(wallet_id)
     if last_chain == chain_name:
+        logger.info(
+            f'Memory: avoiding same chain {chain_name}, re-rolling'
+        )
         chain_name = planner.get_chain_for_today()
 
     route.current_chain = chain_name
