@@ -100,7 +100,7 @@ class ActivityPlanner:
             k=1
         )[0]
 
-        logger.info(f'Planner: selected chain for today → {chain}')
+        logger.info(f'Planner: selected chain → {chain}')
         return chain
 
         return random.choice(chains)
