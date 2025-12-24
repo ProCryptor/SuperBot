@@ -89,11 +89,11 @@ async def process_route(route: Route) -> None:
 
     last_chain = memory.get_last_chain(wallet_id)
     if last_chain == chain_name:
-        logger.info(f'Memory: avoiding same chain as last time → {chain_name}')
         chain_name = planner.get_chain_for_today()
 
     route.current_chain = chain_name
     memory.remember_chain(wallet_id, chain_name)
+
 
     # Тип дня и количество tx
     day_type = planner.get_day_type()
