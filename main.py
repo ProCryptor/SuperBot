@@ -130,7 +130,10 @@ async def process_route(route: Route) -> None:
     from src.utils.data.chain_modules import CHAIN_MODULES
 
     current_chain = route.current_chain
-    available_tasks = CHAIN_MODULES.get(current_chain, [])
+    available_tasks = [
+        task for task in route.tasks
+        if task in CHAIN_MODULES.get(current_chain, [])
+    ]
 
     tasks_today = available_tasks.copy()
     random.shuffle(tasks_today)
