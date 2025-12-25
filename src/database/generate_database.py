@@ -1,13 +1,14 @@
 from src.database.utils.db_manager import clear_database
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import delete
-from src.database.models import WorkingWallets, WalletsTasks
-from loguru import logger
+from src.database.utils.db_manager import DataBaseUtils
+from src.database.base_models.pydantic_manager import DataBaseManagerConfig
+from config import MOBILE_PROXY
+
 
 async def generate_database(engine, private_keys, proxies):
     await clear_database(engine)
 
     proxy_index = 0
+
     for private_key in private_keys:
         proxy = proxies[proxy_index]
         proxy_index = (proxy_index + 1) % len(proxies)
@@ -32,11 +33,3 @@ async def generate_database(engine, private_keys, proxies):
             proxy=f'{proxy_url}|{change_link}' if MOBILE_PROXY else proxy_url,
             status='pending',
         )
-        
-        async def clear_database(engine) -> None:
-            async with AsyncSession(engine) as session:
-                async with session.begin():
-                    for model in [WorkingWallets, WalletsTasks]:
-                        await session.execute(delete(model))
-                    await session.commit()
-            logger.info("The database has been cleared")
