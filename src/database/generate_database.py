@@ -1,5 +1,4 @@
-from src.database.utils.db_manager import clear_database
-from src.database.utils.db_manager import DataBaseUtils
+from src.database.utils.db_manager import clear_database, DataBaseUtils
 from src.database.base_models.pydantic_manager import DataBaseManagerConfig
 from config import MOBILE_PROXY
 
