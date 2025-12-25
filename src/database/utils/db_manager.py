@@ -14,7 +14,7 @@ from loguru import logger
 
 from src.database.base_models.pydantic_manager import DataBaseManagerConfig
 from src.database.models import engine, WorkingWallets, WalletsTasks
-
+from src.database.models import WorkingWallets, WalletsTasks
 
 class DataBaseUtils:
     db_lock = asyncio.Lock()
@@ -149,8 +149,8 @@ async def clear_database(engine):
     async with engine.begin() as conn:
         logger.warning("⚠️ Clearing database: wallets & tasks")
 
-        await conn.execute(delete(TaskModel))
-        await conn.execute(delete(WalletModel))
+        await conn.execute(delete(WalletsTasks))    # ← Теперь так
+        await conn.execute(delete(WorkingWallets))  # ← И так
 
         logger.success("✅ Database cleared successfully")
 
