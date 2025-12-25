@@ -1,3 +1,4 @@
+from src.database.utils.db_manager import clear_database
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import delete
 from src.database.models import WorkingWallets, WalletsTasks
