@@ -17,7 +17,8 @@ async def process_chain_disperse(route):
 
     # ❗ Тут позже будет реальный bridge модуль
     # Сейчас — заглушка поведения
-    await fake_bridge_delay()
+    bridge = RelayBridge(...) или AcrossBridge(...)
+    await bridge.bridge()
 
     route.current_chain = target_chain
     return True
