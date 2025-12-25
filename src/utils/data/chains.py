@@ -6,9 +6,9 @@ class Chain(BaseModel):
     native_token: str
     rpc: str
     chain_id: int
-    scan: str  # ← добавь, если нужно (из старого кода)
+    scan: str = ""  # Добавляем scan, если нужно (опционально)
 
-# Создаём экземпляры (Pydantic автоматически валидирует)
+# Создаём экземпляры (Pydantic автоматически проверит типы)
 BASE = Chain(
     chain_name='BASE',
     native_token='ETH',
