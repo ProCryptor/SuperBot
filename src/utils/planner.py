@@ -1,7 +1,7 @@
 import random
 from datetime import datetime, timedelta
 from loguru import logger
-
+from src.utils.data.bridges import BRIDGES
 
 class ActivityPlanner:
     def __init__(self):
