@@ -9,6 +9,7 @@ from src.utils.data.chains import chain_mapping
 from src.modules.bridges.bridge_factory import AcrossBridge, RelayBridge, SuperBridge
 from src.models.bridge import BridgeConfig
 from src.models.token import Token
+from src.models.chain import Chain  # ← добавь импорт Chain
 
 from web3 import AsyncWeb3, AsyncHTTPProvider
 from eth_account import Account
@@ -26,7 +27,7 @@ async def process_chain_disperse(route):
     success_count = 0
 
     for i in range(num_bridges):
-        max_attempts = 20  # максимум попыток найти подходящую цель
+        max_attempts = 20
         attempt = 0
         success = False
         target_chain = None
@@ -44,7 +45,6 @@ async def process_chain_disperse(route):
 
             logger.info(f"Bridge #{i+1}/{num_bridges} (attempt {attempt}/{max_attempts}): {bridge_name} | {current_chain} → {target_chain}")
 
-            # Проверка баланса
             w3 = AsyncWeb3(AsyncHTTPProvider(chain_mapping[current_chain].rpc))
             try:
                 account = Account.from_key(route.wallet.private_key)
@@ -59,9 +59,8 @@ async def process_chain_disperse(route):
 
                 if balance_eth >= required_eth:
                     logger.info(f"Enough balance for {amount:.6f} ETH bridge")
-                    success = True  # Нашли подходящий маршрут
+                    success = True
                 else:
-                    # Уменьшаем сумму
                     amount = max(0.0002, balance_eth - 0.0001)
                     required_eth = amount + 0.001
                     if balance_eth >= required_eth:
@@ -69,16 +68,13 @@ async def process_chain_disperse(route):
                         success = True
                     else:
                         logger.warning(f"Still insufficient ({balance_eth:.6f} ETH) for {amount:.6f} ETH")
-                        # Продолжаем поиск другой цели
             except Exception as e:
                 logger.error(f"Failed to check balance (attempt {attempt}): {e}")
-                # Продолжаем поиск
 
         if not success:
             logger.warning(f"Bridge #{i+1} skipped: No suitable target chain found after {max_attempts} attempts")
             continue
 
-        # Создаём конфиг
         bridge_config = BridgeConfig(
             from_chain=chain_mapping[current_chain],
             to_chain=chain_mapping[target_chain],
@@ -89,7 +85,6 @@ async def process_chain_disperse(route):
             bridge_percentage=0.0
         )
 
-        # Создаём и запускаем бридж
         bridge = bridge_class(
             private_key=route.wallet.private_key,
             bridge_config=bridge_config,
@@ -108,17 +103,15 @@ async def process_chain_disperse(route):
         except Exception as e:
             logger.error(f"Bridge #{i+1} crashed: {e}")
 
-        # Пауза между бриджами
         pause = random.randint(30, 300)
         logger.info(f"Pause between bridges: {pause} seconds")
         await asyncio.sleep(pause)
 
     logger.info(f"BRIDGE DAY completed: {success_count}/{num_bridges} successful")
 
-        # После бридж-дня — свапы (2–4 случайных свапа на текущей цепочке)
+    # ← СВАПЫ НАЧИНАЮТСЯ ЗДЕСЬ (на уровне функции, без отступа от цикла)
     logger.info(f"Starting {random.randint(2, 4)} swaps on {current_chain} after bridge day")
 
-    # Выбираем 2–4 случайных свапа из доступных для цепочки
     available_swaps = [t for t in CHAIN_MODULES.get(current_chain, []) if t in ['UNISWAP', 'MATCHA_SWAP', 'BUNGEE_SWAP', 'RELAY_SWAP']]
     if not available_swaps:
         logger.warning(f"No swap tasks available for {current_chain}")
@@ -126,12 +119,12 @@ async def process_chain_disperse(route):
         swap_tasks = random.sample(available_swaps, k=min(random.randint(2, 4), len(available_swaps)))
         for task in swap_tasks:
             try:
-                # Chain объект (для передачи в process_...)
                 chain_obj = Chain(
                     chain_name=current_chain,
                     native_token=chain_mapping[current_chain].native_token,
                     rpc=chain_mapping[current_chain].rpc,
-                    chain_id=chain_mapping[current_chain].chain_id
+                    chain_id=chain_mapping[current_chain].chain_id,
+                    scan=chain_mapping[current_chain].scan  # ← добавь scan, если есть в Chain
                 )
                 success = await MODULE_HANDLERS[task](route, chain_obj)
                 if success:
@@ -141,8 +134,8 @@ async def process_chain_disperse(route):
             except Exception as e:
                 logger.error(f"Swap task {task} crashed on {current_chain}: {e}")
 
-            # Пауза между свапами
             pause = random.randint(30, 120)
             logger.info(f"Pause between swaps: {pause} seconds")
             await asyncio.sleep(pause)
+
     return success_count > 0
