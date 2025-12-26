@@ -9,7 +9,7 @@ from src.utils.data.chains import chain_mapping
 from src.modules.bridges.bridge_factory import AcrossBridge, RelayBridge, SuperBridge
 from src.models.bridge import BridgeConfig
 from src.models.token import Token
-
+from eth_account import Account
 from web3 import AsyncWeb3, AsyncHTTPProvider  # ← импорт web3
 
 async def process_chain_disperse(route):
@@ -35,22 +35,26 @@ async def process_chain_disperse(route):
 
         logger.info(f"Bridge #{i+1}/{num_bridges}: {bridge_name} | {current_chain} → {target_chain}")
 
-        # Проверка баланса
-        w3 = AsyncWeb3(AsyncHTTPProvider(chain_mapping[current_chain].rpc))
-        try:
-            wallet_address = route.wallet.address if hasattr(route.wallet, 'address') else '0x' + route.wallet.private_key[2:]
-            balance_wei = await w3.eth.get_balance(route.wallet.address)
-            balance_eth = w3.from_wei(balance_wei, 'ether')
-            logger.info(f"Balance in {current_chain}: {balance_eth:.6f} ETH")
+        # Проверка баланса (исправлено)
+w3 = AsyncWeb3(AsyncHTTPProvider(chain_mapping[current_chain].rpc))
+try:
+    # Получаем адрес из приватного ключа (fallback)
+    from eth_account import Account
+    account = Account.from_key(route.wallet.private_key)
+    wallet_address = account.address
 
-            amount = random.uniform(0.0005, 0.0021)  # ← amount здесь, минимум 0.005 для Relay
-            required_eth = amount + 0.0001  # запас на газ
-            if balance_eth < required_eth:
-                logger.warning(f"Insufficient balance in {current_chain}: {balance_eth:.6f} ETH (need ~{required_eth:.6f}). Skipping bridge.")
-                continue
-        except Exception as e:
-            logger.error(f"Failed to check balance in {current_chain}: {e}")
-            continue
+    balance_wei = await w3.eth.get_balance(wallet_address)
+    balance_eth = w3.from_wei(balance_wei, 'ether')
+    logger.info(f"Balance in {current_chain}: {balance_eth:.6f} ETH")
+
+    amount = random.uniform(0.005, 0.01)
+    required_eth = amount + 0.001
+    if balance_eth < required_eth:
+        logger.warning(f"Insufficient balance in {current_chain}: {balance_eth:.6f} ETH (need ~{required_eth:.6f}). Skipping bridge.")
+        continue        
+except Exception as e:
+    logger.error(f"Failed to check balance in {current_chain}: {e}")
+    continue
 
         try:
             bridge_config = BridgeConfig(
