@@ -1,8 +1,11 @@
+# src/modules/swaps/uniswap/uniswap.py
 from asyncio import sleep
 from typing import Optional, Dict, Any
 
-from eth_account.messages import encode_typed_data
+import time
 from loguru import logger
+from web3 import AsyncWeb3
+from web3.providers.async_rpc import AsyncHTTPProvider
 
 from config import RETRIES, PAUSE_BETWEEN_RETRIES
 from src.models.chain import Chain
@@ -11,11 +14,9 @@ from src.models.token import Token
 from src.modules.swaps.uniswap.constants import UNISWAP_HEADERS
 from src.utils.common.wrappers.decorators import retry
 from src.utils.data.chains import chain_mapping
-
 from src.utils.proxy_manager import Proxy
 from src.utils.request_client.curl_cffi_client import CurlCffiClient
 from src.utils.user.account import Account
-
 
 class Uniswap(Account, CurlCffiClient):
     def __init__(
@@ -43,6 +44,7 @@ class Uniswap(Account, CurlCffiClient):
         )
         self.proxy = proxy
         self.chain = chain
+        self.web3 = AsyncWeb3(AsyncHTTPProvider(chain.rpc))  # ← добавлено!
 
     def __str__(self) -> str:
         return f'{self.__class__.__name__} | [{self.wallet_address}] | [{self.chain.chain_name}] |' \
@@ -84,7 +86,7 @@ class Uniswap(Account, CurlCffiClient):
             json=json_data
         )
         if status == 200:
-            return response_json['quote'], response_json['permitData']
+            return response_json['quote'], response_json.get('permitData')
 
     async def get_json_data(self, quote: Dict[str, Any], permit_data: Optional[Dict[str, Any]]):
         json_data = {
@@ -221,6 +223,8 @@ class Uniswap(Account, CurlCffiClient):
 
     async def get_transaction(self, amount: int):
         quote, permit_data = await self.quote_swap(amount)
+        if not quote:
+            return None
         if not self.swap_config.from_token.name == 'ETH':
             await self.check_approval(amount)
             await sleep(4)
