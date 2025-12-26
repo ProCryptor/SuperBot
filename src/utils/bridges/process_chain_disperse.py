@@ -9,7 +9,8 @@ from src.utils.data.chains import chain_mapping
 from src.modules.bridges.bridge_factory import AcrossBridge, RelayBridge, SuperBridge
 from src.models.bridge import BridgeConfig
 from src.models.token import Token
-from loguru import logger
+
+from web3 import AsyncWeb3, AsyncHTTPProvider  # ← импорт web3
 
 async def process_chain_disperse(route):
     planner = ActivityPlanner()
@@ -19,7 +20,7 @@ async def process_chain_disperse(route):
     num_bridges = random.randint(2, 4)
     logger.info(f"BRIDGE DAY: planning {num_bridges} bridges")
 
-    bridge_classes = [RelayBridge]
+    bridge_classes = [RelayBridge]  # ← можно добавить AcrossBridge, SuperBridge
 
     success_count = 0
 
@@ -34,26 +35,29 @@ async def process_chain_disperse(route):
 
         logger.info(f"Bridge #{i+1}/{num_bridges}: {bridge_name} | {current_chain} → {target_chain}")
 
-        from web3 import AsyncWeb3, AsyncHTTPProvider
-
+        # Проверка баланса
         w3 = AsyncWeb3(AsyncHTTPProvider(chain_mapping[current_chain].rpc))
         try:
             balance_wei = await w3.eth.get_balance(route.wallet.private_key)
             balance_eth = w3.from_wei(balance_wei, 'ether')
             logger.info(f"Balance in {current_chain}: {balance_eth:.6f} ETH")
 
-            required_eth = amount + 0.001  # amount + запас на газ
+            amount = random.uniform(0.005, 0.01)  # ← amount здесь, минимум 0.005 для Relay
+            required_eth = amount + 0.001  # запас на газ
             if balance_eth < required_eth:
                 logger.warning(f"Insufficient balance in {current_chain}: {balance_eth:.6f} ETH (need ~{required_eth:.6f}). Skipping bridge.")
                 continue
-                
+        except Exception as e:
+            logger.error(f"Failed to check balance in {current_chain}: {e}")
+            continue
+
         try:
             bridge_config = BridgeConfig(
                 from_chain=chain_mapping[current_chain],
                 to_chain=chain_mapping[target_chain],
                 from_token=Token(chain_name=current_chain, name='ETH'),
                 to_token=Token(chain_name=target_chain, name='ETH'),
-                amount=random.uniform(0.0006, 0.003),  # в ETH (float)
+                amount=amount,  # ← используем amount
                 use_percentage=False,
                 bridge_percentage=0.0
             )
@@ -74,11 +78,10 @@ async def process_chain_disperse(route):
                 logger.error(f"Bridge #{i+1} failed: {bridge_name}")
         except Exception as e:
             logger.error(f"Bridge #{i+1} crashed: {e}")
-            # Продолжаем следующий бридж
 
         # Пауза между бриджами
-        pause = random.randint(30, 300)  # 30–300 сек
+        pause = random.randint(30, 300)
         logger.info(f"Pause between bridges: {pause} seconds")
         await asyncio.sleep(pause)
 
-    return success_count > 0  # True, если хотя бы один бридж прошёл
+    return success_count > 0
