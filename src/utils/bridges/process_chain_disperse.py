@@ -36,12 +36,14 @@ async def process_chain_disperse(route):
         logger.info(f"Bridge #{i+1}/{num_bridges}: {bridge_name} | {current_chain} → {target_chain}")
 
         # Создаём конфиг для бриджинга
+        amount = Web3.to_wei(random.uniform(0.002, 0.005), 'ether')
+        
         bridge_config = BridgeConfig(
             from_chain=chain_mapping[current_chain],
             to_chain=chain_mapping[target_chain],
             from_token=Token(chain_name=current_chain, name='ETH'),
             to_token=Token(chain_name=target_chain, name='ETH'),
-            amount = Web3.to_wei(random.uniform(0.002, 0.005), 'ether'),
+            amount = amount,
             use_percentage=False,
             bridge_percentage=0.0
         )
