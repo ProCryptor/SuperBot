@@ -5,7 +5,7 @@ from typing import Optional, Dict, Any
 import time
 from loguru import logger
 from web3 import AsyncWeb3
-from web3.providers.async_rpc import AsyncHTTPProvider
+from web3 import AsyncHTTPProvider
 
 from config import RETRIES, PAUSE_BETWEEN_RETRIES
 from src.models.chain import Chain
