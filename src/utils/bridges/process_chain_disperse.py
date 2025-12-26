@@ -39,7 +39,7 @@ async def process_chain_disperse(route):
                 to_chain=chain_mapping[target_chain],
                 from_token=Token(chain_name=current_chain, name='ETH'),
                 to_token=Token(chain_name=target_chain, name='ETH'),
-                amount=random.uniform(0.002, 0.005),  # в ETH (float)
+                amount=random.uniform(0.0006, 0.004),  # в ETH (float)
                 use_percentage=False,
                 bridge_percentage=0.0
             )
