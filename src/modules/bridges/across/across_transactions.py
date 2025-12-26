@@ -7,7 +7,7 @@ from web3.contract import AsyncContract
 from src.models.bridge import BridgeConfig
 from src.models.contracts import AcrossBridgeData
 from src.utils.data.tokens import tokens
-
+from loguru import logger
 
 async def get_quote(
         bridge_config: BridgeConfig,
