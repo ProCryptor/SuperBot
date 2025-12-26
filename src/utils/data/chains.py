@@ -27,7 +27,7 @@ ARBITRUM = Chain(
 ETHEREUM = Chain(
     chain_name='ETHEREUM',
     chain_id=1,
-    rpc='https://rpc.ankr.com/eth',
+    rpc='https://eth.llamarpc.com',
     scan='https://etherscan.io/tx',
     native_token='ETH'
 )
