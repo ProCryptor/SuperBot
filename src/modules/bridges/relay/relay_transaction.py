@@ -78,12 +78,17 @@ async def get_data(
             headers=headers,
             json=json_data
         )
+
+        logger.info(f"Relay API status: {status}")
+        logger.info(f"Relay API response: {response_json}")
+            
         if 'errorCode' in response_json:
-            print(f"Ошибка: {response_json.get('message', 'Неизвестная ошибка')}")
+            logger.error(f"Relay API error: {response_json.get('message', 'Неизвестная ошибка')} (status {status})")
             return
 
         steps = response_json['steps']
         return steps
 
     except Exception as e:
-        exit(0)
+        logger.exception(f"Relay request failed: {e}")
+        return []
