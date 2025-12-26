@@ -42,8 +42,8 @@ async def process_chain_disperse(route):
             balance_eth = w3.from_wei(balance_wei, 'ether')
             logger.info(f"Balance in {current_chain}: {balance_eth:.6f} ETH")
 
-            amount = random.uniform(0.005, 0.01)  # ← amount здесь, минимум 0.005 для Relay
-            required_eth = amount + 0.001  # запас на газ
+            amount = random.uniform(0.0005, 0.0021)  # ← amount здесь, минимум 0.005 для Relay
+            required_eth = amount + 0.0001  # запас на газ
             if balance_eth < required_eth:
                 logger.warning(f"Insufficient balance in {current_chain}: {balance_eth:.6f} ETH (need ~{required_eth:.6f}). Skipping bridge.")
                 continue
