@@ -21,7 +21,7 @@ async def process_chain_disperse(route):
     num_bridges = random.randint(2, 4)
     logger.info(f"BRIDGE DAY: planning {num_bridges} bridges")
 
-    bridge_classes = [AcrossBridge]  # доступные мосты
+    bridge_classes = [AcrossBridge, RelayBridge]  # доступные мосты
 
     success_count = 0
 
