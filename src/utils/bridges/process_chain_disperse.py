@@ -53,7 +53,7 @@ async def process_chain_disperse(route):
                 balance_eth = w3.from_wei(balance_wei, 'ether')
                 logger.info(f"Balance in {current_chain}: {balance_eth:.6f} ETH")
 
-                base_amount = random.uniform(0.005, 0.01)
+                base_amount = random.uniform(0.00025, 0.00251)
                 amount = base_amount
                 required_eth = amount + 0.001
 
@@ -62,7 +62,7 @@ async def process_chain_disperse(route):
                     success = True  # Нашли подходящий маршрут
                 else:
                     # Уменьшаем сумму
-                    amount = max(0.002, balance_eth - 0.001)
+                    amount = max(0.0002, balance_eth - 0.0001)
                     required_eth = amount + 0.001
                     if balance_eth >= required_eth:
                         logger.warning(f"Reduced amount to {amount:.6f} ETH to fit balance")
