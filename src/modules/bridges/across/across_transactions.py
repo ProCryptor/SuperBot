@@ -1,14 +1,5 @@
 # src/modules/bridges/across/across_transactions.py
-from typing import Optional, Callable, Dict, Any
-
-import pyuseragents
-from eth_typing import ChecksumAddress
-from web3.contract import AsyncContract
-
-from src.models.bridge import BridgeConfig
-from src.models.contracts import AcrossBridgeData
-from src.utils.data.tokens import tokens
-from loguru import logger
+from typing import Optional, Dict, Any
 
 import pyuseragents
 from eth_typing import ChecksumAddress
@@ -54,7 +45,7 @@ async def get_quote(
     try:
         response_json, status = await request_func(
             method="GET",
-            url='https://across.to/api/suggested-fees',  # ← актуальный URL (без /app)
+            url='https://across.to/api/suggested-fees',
             params=params,
             headers=headers
         )
@@ -62,7 +53,7 @@ async def get_quote(
         logger.info(f"Across API status: {status}")
         logger.info(f"Across API response: {response_json}")
 
-        if status != 200:
+        if status != 200 or not response_json:
             logger.error(f"Across API failed: status {status}")
             return None
 
@@ -92,30 +83,34 @@ async def create_across_tx(
 
     # Адреса Across (актуальные на 2025)
     contracts = {
-        'BASE': '0x09aea4b2242abc8bb4bb78d537a67a245a7bec64',
-        'OPTIMISM': '0x6f26bf09b1c792e3228e5467807a900a503c0281',
-        'ARBITRUM': '0xe35e9842fceaca96570b734083f4a58e8f7c5f2a',
+        'BASE': '0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64',
+        'OPTIMISM': '0x6f26Bf09B1C792e3228e5467807a900a503c0281',
+        'ARBITRUM': '0xe35e9842fceaCA96570B734083f4a58e8F7C5f2A',
     }
 
-    contract_address = contracts.get(bridge_config.from_chain.chain_name.upper())
+    chain_name = bridge_config.from_chain.chain_name.upper()
+    contract_address = contracts.get(chain_name)
     if not contract_address:
-        logger.error(f"No Across contract for {bridge_config.from_chain.chain_name}")
+        logger.error(f"No Across contract for {chain_name}")
         return None
 
-    contract = self.load_contract(
-        address=contract_address,
-        web3=self.web3,
-        abi=AcrossBridgeData.abi
-    )
-
     try:
+        contract = self.load_contract(
+            address=contract_address,
+            web3=self.web3,
+            abi=AcrossBridgeData.abi
+        )
+
+        relay_fee_total = int(quote['relayFeeTotal'])
+        min_received = amount - relay_fee_total
+
         tx = await contract.functions.depositV3(
             self.wallet_address,
             self.wallet_address,
             bridge_config.from_token.address,
             bridge_config.to_token.address,
             amount,
-            amount - int(quote['relayFeePct'] * amount),  # relayFeeTotal
+            min_received,
             bridge_config.to_chain.chain_id,
             '0x0000000000000000000000000000000000000000',
             int(quote['timestamp']),
@@ -128,7 +123,9 @@ async def create_across_tx(
             'from': self.wallet_address,
             'gasPrice': await self.web3.eth.gas_price,
         })
+
+        logger.info(f"Across tx built: {tx}")
         return tx, None
     except Exception as e:
-        logger.error(f"Failed to build Across tx: {e}")
+        logger.exception(f"Failed to build Across tx: {e}")
         return None
