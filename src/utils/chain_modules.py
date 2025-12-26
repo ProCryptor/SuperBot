@@ -1,4 +1,5 @@
 # src/utils/chain_modules.py
+import random
 from src.modules.swaps.uniswap.uniswap import Uniswap
 from src.modules.swaps.matcha.matcha_transaction import create_matcha_swap_tx
 from src.modules.swaps.bungee.bungee_transaction import create_bungee_swap_tx
