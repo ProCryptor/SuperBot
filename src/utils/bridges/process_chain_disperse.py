@@ -55,7 +55,7 @@ async def process_chain_disperse(route):
 
                 base_amount = random.uniform(0.00025, 0.00251)
                 amount = base_amount
-                required_eth = amount + 0.001
+                required_eth = amount + 0.00031
 
                 if balance_eth >= required_eth:
                     logger.info(f"Enough balance for {amount:.6f} ETH bridge")
