@@ -79,17 +79,23 @@ class Uniswap(Account, CurlCffiClient):
             ],
             'slippageTolerance': 2.5,
         }
+        headers = UNISWAP_HEADERS.copy()
+        headers.update({
+            'x-api-key': 'your_api_key_if_needed',  # ← если есть ключ
+            'x-request-source': 'uniswap-web',
+            'x-universal-router-version': '1.2',
+        })
         try:
             response_json, status = await self.make_request(
                 method="POST",
                 url='https://trading-api-labs.interface.gateway.uniswap.org/v1/quote',
-                headers=UNISWAP_HEADERS,
+                headers=headers,
                 json=json_data
             )
             if status == 200:
                 return response_json['quote'], response_json.get('permitData')
             else:
-                logger.error(f"Quote failed with status {status}")
+                logger.error(f"Quote failed with status {status}: {response_json}")
                 return None
         except Exception as e:
             logger.error(f"Quote error: {e}")
