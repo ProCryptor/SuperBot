@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 @dataclass
 class ERC20:
@@ -16,69 +16,38 @@ class AcrossBridgeData:
 
 @dataclass
 class MatchaSwapData:
-    address: str = None  # Matcha — API-based, контракт не нужен
-    abi: list = []  # Пустой список (API, не on-chain)
+    address: str = None
+    abi: list = field(default_factory=list)  # ← фикс
 
 @dataclass
 class BungeeSwapData:
-    address: str = '0x3fC91A3afd70395Cd496C647d5a6CC9C4B2b7FAD'  # Socket.tech Router (Bungee)
-    abi: list = [  # Реальный ABI от Socket.tech (Bungee)
-        {
-            "inputs": [
-                {"internalType": "address", "name": "recipient", "type": "address"},
-                {"internalType": "address", "name": "inputToken", "type": "address"},
-                {"internalType": "uint256", "name": "inputAmount", "type": "uint256"},
-                {"internalType": "address", "name": "outputToken", "type": "address"},
-                {"internalType": "uint256", "name": "minOutputAmount", "type": "uint256"},
-                {"internalType": "bytes", "name": "route", "type": "bytes"}
-            ],
-            "name": "executeSwap",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-            "stateMutability": "payable",
-            "type": "function"
-        },
-        # Добавьте полный ABI, если нужно (это минимальный)
-    ]
+    address: str = None
+    abi: list = field(default_factory=list)  # ← фикс
 
 @dataclass
 class SushiswapData:
-    address: str = '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506'  # SushiSwap Router V2 on Polygon/Optimism/Arbitrum
-    abi: list = [  # SushiSwap Router ABI (стандартный Uniswap V2 Router)
-        {
-            "inputs": [
-                {"internalType": "uint256", "name": "amountIn", "type": "uint256"},
-                {"internalType": "uint256", "name": "amountOutMin", "type": "uint256"},
-                {"internalType": "address[]", "name": "path", "type": "address[]"},
-                {"internalType": "address", "name": "to", "type": "address"},
-                {"internalType": "uint256", "name": "deadline", "type": "uint256"}
-            ],
-            "name": "swapExactTokensForTokens",
-            "outputs": [{"internalType": "uint256[]", "name": "amounts", "type": "uint256[]"}],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        # ... полный Uniswap V2 Router ABI
-    ]
+    address: str = None
+    abi: list = field(default_factory=list)  # ← фикс
 
 @dataclass
 class OwltoData:
-    address: str = '0x...owlto_contract...'  # Адрес Owlto (если есть)
-    abi: list = []  # Owlto — API-based, ABI не нужен
+    address: str = None
+    abi: list = field(default_factory=list)  # ← фикс
 
 @dataclass
 class OkuData:
     address: str = None
-    abi: list = []  # Oku — API
+    abi: list = field(default_factory=list)  # ← фикс
 
 @dataclass
 class DefillamaData:
     address: str = None
-    abi: list = []  # DeFiLlama — API
+    abi: list = field(default_factory=list)  # ← фикс
 
 @dataclass
 class RelayData:
-    address: str = None  # Relay — API-based
-    abi: list = []  # Пустой список
+    address: str = None
+    abi: list = field(default_factory=list)  # ← фикс
 
 @dataclass
 class VenusData:
