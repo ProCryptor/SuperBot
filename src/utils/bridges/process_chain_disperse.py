@@ -20,7 +20,7 @@ async def process_chain_disperse(route):
     current_chain = route.current_chain or 'BASE'
 
     # Сколько бриджей сделать сегодня (2–4)
-    num_bridges = random.randint(2,4)
+    num_bridges = random.randint(2, 4)
     logger.info(f"BRIDGE DAY: planning {num_bridges} bridges")
 
     bridge_classes = [RelayBridge] * 6 + [AcrossBridge] * 4  # 70% Relay, 30% Across
@@ -148,7 +148,7 @@ async def process_chain_disperse(route):
             swap_tasks.append((task, chain_obj, current_swap_chain))
 
         for task, chain_obj, swap_chain in swap_tasks:
-            max_swap_attempts = 3
+            max_swap_attempts = 7
             swap_attempt = 0
             while swap_attempt < max_swap_attempts:
                 swap_attempt += 1
