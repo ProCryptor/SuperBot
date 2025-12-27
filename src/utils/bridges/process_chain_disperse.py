@@ -136,6 +136,7 @@ async def process_chain_disperse(route):
             rpc=chain_mapping[current_chain].rpc,
             chain_id=chain_mapping[current_chain].chain_id,
             scan=chain_mapping[current_chain].scan
+        )    
         for task in swap_tasks:
             max_swap_attempts = 3  # ← 3 попытки на задачу
             swap_attempt = 0
