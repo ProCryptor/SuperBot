@@ -54,9 +54,9 @@ async def process_uniswap(route, chain_obj):
                     current_chain = random.choice(alternatives)
                     logger.warning(f"Switching chain to {current_chain} for attempt {attempt}")
 
-            from_token = random.choice(['ETH', 'USDC', 'USDT', 'DAI'])
-            to_token = random.choice(['USDC', 'USDT', 'DAI'])
-            logger.warning(f"Switching token to {from_token} → {to_token} for attempt {attempt}")
+    from_token = random.choice(['ETH', 'USDC', 'USDT', 'DAI'])
+    to_token = random.choice(['USDC', 'USDT', 'DAI'])
+    logger.warning(f"Switching token to {from_token} → {to_token} for attempt {attempt}")
 
                     alternatives = [c for c in chain_mapping.keys() if c != current_chain]
                     if alternatives:
