@@ -6,7 +6,7 @@ from eth_typing import ChecksumAddress
 from web3 import AsyncWeb3
 from web3.contract import Contract, AsyncContract
 from web3.types import TxParams
-
+from src.utils.data.tokens import tokens
 from loguru import logger
 from src.models.swap import SwapConfig
 from src.utils.request_client.curl_cffi_client import CurlCffiClient
