@@ -15,6 +15,15 @@ from src.utils.data.tokens import tokens
 STABLES = ['USDC', 'USDT', 'DAI']
 ALL_TOKENS = ['ETH'] + STABLES
 
+chain_obj = Chain(
+    chain_name=current_chain,
+    native_token=chain_mapping[current_chain].native_token,
+    rpc=chain_mapping[current_chain].rpc,
+    chain_id=chain_mapping[current_chain].chain_id,
+    scan=chain_mapping[current_chain].scan,
+    tokens=tokens[current_chain]   # ← КРИТИЧНО
+)
+
 
 async def get_erc20_balance(w3: AsyncWeb3, wallet: str, token_address: str) -> float:
     abi = [
