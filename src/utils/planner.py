@@ -81,8 +81,9 @@ class ActivityPlanner:
         elif self.personality == 'LAZY':
             base = max(1, base - 1)
 
-    tx_count = int(base * modifier)
-    return max(1, tx_count)
+        tx_count = int(base * modifier)
+        return max(1, tx_count)
+        
     def get_pause_days_after(self, day_type: str) -> int:
         if day_type == 'LIGHT':
             return random.randint(*self.pause_days_after_light)
