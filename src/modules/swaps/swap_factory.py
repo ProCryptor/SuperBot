@@ -50,7 +50,6 @@ def create_swap_class(
                 from_token=Token(
                     chain_name=chain.chain_name,
                     name=from_token
-
                 ),
                 to_token=Token(
                     chain_name=chain.chain_name,
@@ -94,6 +93,31 @@ def create_swap_class(
                 amount: int
         ) -> tuple[TxParams, Optional[str]]:
             return await swap_tx_function(self, swap_config, contract, amount_out, amount)
+
+        async def swap(self) -> bool:
+            tx_params, to_address = await self.create_swap_tx(
+                self.config,
+                self.contract,
+                0,  # amount_out — можно 0, если не используется
+                int(self.config.amount * 10**18)  # amount in wei
+            )
+            if not tx_params:
+                logger.error(f"{self.name} failed to create tx params")
+                return False
+
+            try:
+                tx_hash = await self.sign_transaction(tx_params)
+                logger.info(f"{self.name} tx sent: {tx_hash}")
+                confirmed = await self.wait_until_tx_finished(tx_hash)
+                if confirmed:
+                    logger.success(f"{self.name} swap confirmed: {tx_hash}")
+                    return True
+                else:
+                    logger.error(f"{self.name} tx failed: {tx_hash}")
+                    return False
+            except Exception as e:
+                logger.error(f"{self.name} swap error: {e}")
+                return False
 
     SwapClass.__name__ = class_name
     return SwapClass
