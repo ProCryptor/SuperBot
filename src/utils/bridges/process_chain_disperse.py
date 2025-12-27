@@ -62,13 +62,18 @@ async def process_chain_disperse(route):
                     logger.info(f"Enough balance for {amount:.6f} ETH bridge")
                     success = True
                 else:
-                    amount = max(0.0002, balance_eth - 0.0001)
+                    amount = max(0.0002, float(balance_eth) - 0.0001)  # ← float(balance_eth)
                     required_eth = amount + 0.001
                     if balance_eth >= required_eth:
                         logger.warning(f"Reduced amount to {amount:.6f} ETH to fit balance")
                         success = True
                     else:
                         logger.warning(f"Still insufficient ({balance_eth:.6f} ETH) for {amount:.6f} ETH")
+                        alternatives = [c for c in chain_mapping.keys() if c != current_chain]
+                        if alternatives:
+                            current_chain = random.choice(alternatives)
+                            logger.warning(f"Switching current chain to {current_chain} for attempt {attempt}")
+                            route.current_chain = current_chain
             except Exception as e:
                 logger.error(f"Failed to check balance (attempt {attempt}): {e}")
 
