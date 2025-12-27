@@ -41,9 +41,16 @@ async def process_chain_disperse(route):
                 logger.warning(f"Attempt {attempt}/{max_attempts}: No target chain available")
                 break
 
+            # Внутри while-loop (перед выбором bridge_class)
             bridge_class = random.choice(bridge_classes)
             bridge_name = bridge_class.__name__.replace('Bridge', '')
 
+            # Проверяем, поддерживает ли этот мост исходную и целевую цепочку
+            if bridge_name == 'Across' and (current_chain not in BRIDGE_ROUTES['ACROSS'] or target_chain not in BRIDGE_ROUTES['ACROSS']):
+                logger.warning(f"Across not supported for {current_chain} → {target_chain}, skipping")
+                continue
+
+            # Если всё ок — продолжаем
             logger.info(f"Bridge #{i+1}/{num_bridges} (attempt {attempt}/{max_attempts}): {bridge_name} | {current_chain} → {target_chain}")
 
             w3 = AsyncWeb3(AsyncHTTPProvider(chain_mapping[current_chain].rpc))
