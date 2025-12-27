@@ -10,6 +10,7 @@ from src.modules.swaps.uniswap.uniswap import Uniswap
 from src.modules.swaps.matcha.matcha_transaction import MatchaSwap  # ← фабрика
 from src.modules.swaps.bungee.bungee_transaction import BungeeSwap  # ← фабрика
 from src.modules.swaps.relayswap.relay_transaction import RelaySwap  # ← фабрика
+from src.modules.swaps.swap_factory import MatchaSwap, BungeeSwap, RelaySwap
 from src.models.chain import Chain
 from src.utils.data.tokens import tokens
 
