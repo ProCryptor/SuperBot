@@ -14,7 +14,7 @@ from src.utils.data.tokens import tokens
 
 async def process_uniswap(route, chain_obj):
     return await handle_uniswap(route, chain_obj)
-    max_attempts = 20
+    max_attempts = 50
     attempt = 0
     success = False
     from_token = 'ETH'
@@ -79,7 +79,7 @@ async def process_uniswap(route, chain_obj):
         return False
 
 async def process_matcha_swap(route, chain_obj):
-    max_attempts = 20
+    max_attempts = 50
     attempt = 0
     success = False
     from_token = 'ETH'
@@ -144,7 +144,7 @@ async def process_matcha_swap(route, chain_obj):
         return False
 
 async def process_bungee_swap(route, chain_obj):
-    max_attempts = 20
+    max_attempts = 50
     attempt = 0
     success = False
     from_token = 'ETH'
@@ -209,7 +209,7 @@ async def process_bungee_swap(route, chain_obj):
         return False
 
 async def process_relay_swap(route, chain_obj):
-    max_attempts = 20
+    max_attempts = 50
     attempt = 0
     success = False
     from_token = 'ETH'
