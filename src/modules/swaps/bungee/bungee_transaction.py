@@ -135,4 +135,18 @@ async def create_bungee_swap_tx(
         )
         await sleep(3)
 
-    return await build_tx(self, quote, tls_client, headers, self.web3, self.wallet_address)
+    tx, to_address = await build_tx(self, quote, tls_client, headers, self.web3, self.wallet_address)
+    if not tx:
+        logger.error("Bungee failed to build tx")
+        return None
+
+    # Отправляем tx
+    tx_hash = await self.sign_transaction(tx)
+    logger.info(f"BungeeSwap tx sent: {tx_hash}")
+    confirmed = await self.wait_until_tx_finished(tx_hash)
+    if confirmed:
+        logger.success(f"BungeeSwap swap confirmed: {tx_hash}")
+        return tx, to_address
+    else:
+        logger.error(f"BungeeSwap tx failed: {tx_hash}")
+        return None, None
