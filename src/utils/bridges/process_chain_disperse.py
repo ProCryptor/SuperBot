@@ -11,7 +11,7 @@ from src.models.bridge import BridgeConfig
 from src.models.token import Token
 from src.models.chain import Chain  # ← добавь импорт Chain
 from src.utils.chain_modules import CHAIN_MODULES, MODULE_HANDLERS
-
+from src.utils.data.tokens import tokens
 from web3 import AsyncWeb3, AsyncHTTPProvider
 from eth_account import Account
 
