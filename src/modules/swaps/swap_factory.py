@@ -9,7 +9,7 @@ from src.models.contracts import *
 from src.modules.swaps.bungee.bungee_transaction import create_bungee_swap_tx
 from src.modules.swaps.defillama.defillama_transaction import create_defillama_swap_tx
 from src.modules.swaps.inkyswap.inkyswap_transaction import create_inky_swap_tx, get_amount_out_inky
-from src.utils.data.tokens import tokens
+
 from src.modules.swaps.matcha.matcha_transaction import create_matcha_swap_tx
 from src.modules.swaps.oku_swap.oku_transaction import create_oku_swap_tx
 from src.modules.swaps.owlto.owlto_transaction import create_owlto_swap_tx
@@ -50,6 +50,7 @@ def create_swap_class(
                 from_token=Token(
                     chain_name=chain.chain_name,
                     name=from_token
+
                 ),
                 to_token=Token(
                     chain_name=chain.chain_name,
@@ -69,14 +70,14 @@ def create_swap_class(
                 name=name,
                 chain=chain
             )
-
-            # Добавляем необходимые атрибуты (это было пропущено)
-            self.contract = self.web3.eth.contract(
-                address=self.contract_address,
-                abi=self.abi
-            )
-            self.web3 = AsyncWeb3(AsyncHTTPProvider(chain.rpc))
-            self.account = Account.from_key(private_key)
+            # Фикс: не создаём contract, если abi = None
+            if abi is not None and abi:
+                self.contract = self.web3.eth.contract(
+                    address=self.contract_address,
+                    abi=self.abi
+                )
+            else:
+                self.contract = None  # API-based, contract не нужен
 
         def __str__(self) -> str:
             return f'{self.__class__.__name__} | [{self.wallet_address}] | [{self.chain.chain_name}] |' \
@@ -105,7 +106,7 @@ def create_swap_class(
         async def swap(self) -> bool:
             tx_params, to_address = await self.create_swap_tx(
                 self.config,
-                self.contract,  # ← теперь self.contract существует
+                self.contract,  # ← если None, передадим None
                 0,
                 int(self.config.amount * 10**18)
             )
