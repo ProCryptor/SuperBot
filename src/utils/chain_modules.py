@@ -1,4 +1,6 @@
+# src/utils/chain_modules.py
 import random
+import asyncio
 from loguru import logger
 
 from web3 import AsyncWeb3, AsyncHTTPProvider
@@ -11,19 +13,8 @@ from src.models.chain import Chain
 from src.utils.data.chains import chain_mapping
 from src.utils.data.tokens import tokens
 
-
 STABLES = ['USDC', 'USDT', 'DAI']
 ALL_TOKENS = ['ETH'] + STABLES
-
-chain_obj = Chain(
-    chain_name=current_chain,
-    native_token=chain_mapping[current_chain].native_token,
-    rpc=chain_mapping[current_chain].rpc,
-    chain_id=chain_mapping[current_chain].chain_id,
-    scan=chain_mapping[current_chain].scan,
-    tokens=tokens[current_chain]   # ← КРИТИЧНО
-)
-
 
 async def get_erc20_balance(w3: AsyncWeb3, wallet: str, token_address: str) -> float:
     abi = [
@@ -47,15 +38,10 @@ async def get_erc20_balance(w3: AsyncWeb3, wallet: str, token_address: str) -> f
     decimals = await contract.functions.decimals().call()
     return raw / (10 ** decimals)
 
-
 def choose_swap_pair():
-    """
-    Случайная, но ОСМЫСЛЕННАЯ пара
-    """
     from_token = random.choice(ALL_TOKENS)
     to_token = random.choice([t for t in ALL_TOKENS if t != from_token])
     return from_token, to_token
-
 
 async def prepare_swap(route, chain_obj):
     w3 = AsyncWeb3(AsyncHTTPProvider(chain_mapping[chain_obj.chain_name].rpc))
@@ -67,7 +53,7 @@ async def prepare_swap(route, chain_obj):
 
         # === FROM ETH ===
         if from_token == 'ETH':
-            eth_balance = w3.from_wei(await w3.eth.get_balance(wallet), 'ether')
+            eth_balance = float(w3.from_wei(await w3.eth.get_balance(wallet), 'ether'))
             if eth_balance < 0.0004:
                 continue
 
@@ -75,7 +61,11 @@ async def prepare_swap(route, chain_obj):
             return from_token, to_token, amount, chain_obj
 
         # === FROM ERC20 ===
-        token_address = tokens[chain_obj.chain_name][from_token]
+        token_address = tokens[chain_obj.chain_name].get(from_token)
+        if token_address is None:
+            logger.warning(f"Token {from_token} not found in chain {chain_obj.chain_name}")
+            continue
+
         balance = await get_erc20_balance(w3, wallet, token_address)
 
         if balance <= 0:
@@ -84,8 +74,8 @@ async def prepare_swap(route, chain_obj):
         amount = round(random.uniform(balance * 0.2, balance * 0.7), 6)
         return from_token, to_token, amount, chain_obj
 
+    logger.warning("No suitable swap pair found after 20 attempts")
     return None, None, None, None
-
 
 # =========================
 # UNISWAP
@@ -93,8 +83,8 @@ async def prepare_swap(route, chain_obj):
 async def process_uniswap(route, chain_obj):
     try:
         return await handle_uniswap(route, chain_obj)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Uniswap handle failed: {e}")
 
     from_token, to_token, amount, chain_obj = await prepare_swap(route, chain_obj)
     if not from_token:
@@ -117,7 +107,6 @@ async def process_uniswap(route, chain_obj):
     except Exception as e:
         logger.error(f"Uniswap error: {e}")
         return False
-
 
 # =========================
 # MATCHA
@@ -145,7 +134,6 @@ async def process_matcha_swap(route, chain_obj):
         logger.error(f"Matcha error: {e}")
         return False
 
-
 # =========================
 # BUNGEE
 # =========================
@@ -172,7 +160,6 @@ async def process_bungee_swap(route, chain_obj):
         logger.error(f"Bungee error: {e}")
         return False
 
-
 # =========================
 # RELAY
 # =========================
@@ -198,7 +185,6 @@ async def process_relay_swap(route, chain_obj):
     except Exception as e:
         logger.error(f"RelaySwap error: {e}")
         return False
-
 
 # =========================
 # MODULE MAP
