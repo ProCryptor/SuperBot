@@ -1,7 +1,7 @@
 # src/utils/chain_modules.py
 import random
 import asyncio
-from loguru import logger
+from loguru import logger  # ← импорт logger
 
 from web3 import AsyncWeb3, AsyncHTTPProvider
 from eth_account import Account
@@ -11,7 +11,7 @@ from src.modules.swaps.swap_factory import MatchaSwap, BungeeSwap, RelaySwap
 from src.modules.handlers.uniswap import handle_uniswap
 from src.models.chain import Chain
 from src.utils.data.tokens import tokens
-from src.utils.data.chains import chain_mapping  # ← ИМПОРТ, который не был — это причина ошибки!
+from src.utils.data.chains import chain_mapping
 
 async def process_uniswap(route, chain_obj):
     # Сначала пробуем handle_uniswap
