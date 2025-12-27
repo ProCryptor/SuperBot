@@ -120,41 +120,45 @@ async def process_chain_disperse(route):
         logger.info(f"Pause between bridges: {pause} seconds")
         await asyncio.sleep(pause)
 
-    logger.info(f"BRIDGE DAY completed: {success_count}/{num_bridges} successful")
+        logger.info(f"BRIDGE DAY completed: {success_count}/{num_bridges} successful")
 
-    # ← СВАПЫ НАЧИНАЮТСЯ ЗДЕСЬ
-    logger.info(f"Starting {random.randint(2, 4)} swaps on {current_chain} after bridge day")
+        # ← СВАПЫ НАЧИНАЮТСЯ ЗДЕСЬ
+        logger.info(f"Starting {random.randint(2, 4)} swaps on {current_chain} after bridge day")
 
-    available_swaps = [t for t in CHAIN_MODULES.get(current_chain, []) if t in ['UNISWAP', 'MATCHA_SWAP', 'BUNGEE_SWAP', 'RELAY_SWAP']]
-    if not available_swaps:
-        logger.warning(f"No swap tasks available for {current_chain}")
-    else:
-        swap_tasks = random.sample(available_swaps, k=min(random.randint(2, 4), len(available_swaps)))
         chain_obj = Chain(
             chain_name=current_chain,
             native_token=chain_mapping[current_chain].native_token,
             rpc=chain_mapping[current_chain].rpc,
             chain_id=chain_mapping[current_chain].chain_id,
             scan=chain_mapping[current_chain].scan
-        )    
-        for task in swap_tasks:
-            max_swap_attempts = 3  # ← 3 попытки на задачу
-            swap_attempt = 0
-            while swap_attempt < max_swap_attempts:
-                swap_attempt += 1
-                try:
-                    success = await MODULE_HANDLERS[task](route, chain_obj)
-                    if success:
-                        logger.success(f"Swap task {task} successful on {current_chain}")
-                        break
-                    else:
-                        logger.error(f"Swap task {task} failed on {current_chain} - attempt {swap_attempt}")
-                except Exception as e:
-                    logger.error(f"Swap task {task} crashed on {current_chain}: {e} - attempt {swap_attempt}")
-            else:
-                logger.warning(f"Swap task {task} skipped after {max_swap_attempts} attempts")
+        )
 
-            pause = random.randint(30, 120)
-            logger.info(f"Pause between swaps: {pause} seconds")
-            await asyncio.sleep(pause)
-    return success_count > 0
+        available_swaps = list(CHAIN_MODULES.get(current_chain, []))  # ← все доступные
+        random.shuffle(available_swaps)  # ← перемешиваем для рандома DEX
+
+        if not available_swaps:
+            logger.warning(f"No swap tasks available for {current_chain}")
+        else:
+            swap_tasks = random.sample(available_swaps, k=min(random.randint(2, 4), len(available_swaps)))
+            for task in swap_tasks:
+                max_swap_attempts = 3
+                swap_attempt = 0
+                while swap_attempt < max_swap_attempts:
+                    swap_attempt += 1
+                    try:
+                        success = await MODULE_HANDLERS[task](route, chain_obj)
+                        if success:
+                            logger.success(f"Swap task {task} successful on {current_chain}")
+                            break
+                        else:
+                            logger.error(f"Swap task {task} failed on {current_chain} - attempt {swap_attempt}")
+                    except Exception as e:
+                        logger.error(f"Swap task {task} crashed on {current_chain}: {e} - attempt {swap_attempt}")
+                else:
+                    logger.warning(f"Swap task {task} skipped after {max_swap_attempts} attempts")
+
+                pause = random.randint(30, 120)
+                logger.info(f"Pause between swaps: {pause} seconds")
+                await asyncio.sleep(pause)
+
+        return success_count > 0
