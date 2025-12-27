@@ -6,13 +6,13 @@ from src.utils.data.bridges import BRIDGES
 class ActivityPlanner:
     def __init__(self):
         # Вероятности
-        self.skip_day_chance = 0.25        # 25% — вообще ничего не делать
+        self.skip_day_chance = 0.15        # 25% — вообще ничего не делать
         self.light_day_chance = 0.35       # 35% — лёгкий день
-        self.full_day_chance = 0.40        # 40% — активный день
+        self.full_day_chance = 0.50        # 40% — активный день
 
         # Количество действий
-        self.light_day_tx_range = (1, 2)
-        self.full_day_tx_range = (5, 12)
+        self.light_day_tx_range = (3, 5)
+        self.full_day_tx_range = (6, 12)
 
         # Паузы между днями
         self.pause_days_after_full = (1, 2)
@@ -77,7 +77,7 @@ class ActivityPlanner:
             base = random.randint(*self.full_day_tx_range)
 
         if self.personality == 'ACTIVE':
-            base += random.randint(1, 3)
+            base += random.randint(2, 4)
         elif self.personality == 'LAZY':
             base = max(1, base - 1)
 
