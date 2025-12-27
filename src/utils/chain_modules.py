@@ -209,27 +209,29 @@ async def process_bungee_swap(route, chain_obj):
         return False
 
 async def process_relay_swap(route, chain_obj):
-    max_attempts = 50
+    max_attempts = 20  # ← верни 20, 50 — слишком много
     attempt = 0
     success = False
+    current_chain = chain_obj.chain_name
     from_token = 'ETH'
+    to_token = random.choice(['USDC', 'USDT', 'DAI'])  # ← рандомный to_token
     amount = None
 
     while attempt < max_attempts and not success:
         attempt += 1
-        logger.info(f"RelaySwap attempt {attempt}/{max_attempts} on {chain_obj.chain_name}")
+        logger.info(f"RelaySwap attempt {attempt}/{max_attempts} on {current_chain}")
 
-        w3 = AsyncWeb3(AsyncHTTPProvider(chain_obj.rpc))
+        w3 = AsyncWeb3(AsyncHTTPProvider(chain_mapping[current_chain].rpc))
         try:
             account = Account.from_key(route.wallet.private_key)
             wallet_address = account.address
             balance_wei = await w3.eth.get_balance(wallet_address)
             balance_eth = w3.from_wei(balance_wei, 'ether')
-            logger.info(f"Balance in {chain_obj.chain_name}: {balance_eth:.6f} ETH")
+            logger.info(f"Balance in {current_chain}: {balance_eth:.6f} ETH")
 
-            base_amount = random.uniform(0.0005, 0.005)
+            base_amount = random.uniform(0.0002, 0.003)
             amount = base_amount
-            required_eth = amount + 0.0005
+            required_eth = amount + 0.0002
 
             if balance_eth >= required_eth:
                 logger.info(f"Enough balance for {amount:.6f} ETH swap")
@@ -241,20 +243,37 @@ async def process_relay_swap(route, chain_obj):
                     logger.warning(f"Reduced amount to {amount:.6f} ETH for swap")
                     success = True
                 else:
+                    # Меняем токен
                     from_token = random.choice(['ETH', 'USDC', 'USDT'])
-                    logger.warning(f"Switching token to {from_token} for attempt {attempt}")
+                    to_token = random.choice(['USDC', 'USDT', 'DAI'])  # ← рандомный to_token
+                    logger.warning(f"Switching token to {from_token} → {to_token} for attempt {attempt}")
+
+                    # Меняем цепочку, если баланса нет
+                    alternatives = [c for c in chain_mapping.keys() if c != current_chain]
+                    if alternatives:
+                        current_chain = random.choice(alternatives)
+                        logger.warning(f"Switching chain to {current_chain} for attempt {attempt}")
+
+                    # Обновляем chain_obj для новой цепочки
+                    chain_obj = Chain(
+                        chain_name=current_chain,
+                        native_token=chain_mapping[current_chain].native_token,
+                        rpc=chain_mapping[current_chain].rpc,
+                        chain_id=chain_mapping[current_chain].chain_id,
+                        scan=chain_mapping[current_chain].scan
+                    )
         except Exception as e:
             logger.error(f"Failed to check balance (attempt {attempt}): {e}")
 
     if not success:
-        logger.warning(f"RelaySwap skipped: No suitable amount/token after {max_attempts} attempts")
+        logger.warning(f"RelaySwap skipped: No suitable amount/token/chain after {max_attempts} attempts")
         return False
 
     try:
         relay = RelaySwap(
             private_key=route.wallet.private_key,
             from_token=from_token,
-            to_token='USDC',
+            to_token=to_token,  # ← рандомный to_token
             amount=amount,
             use_percentage=False,
             swap_percentage=0.0,
