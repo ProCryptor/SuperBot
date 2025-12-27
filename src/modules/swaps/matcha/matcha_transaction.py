@@ -75,4 +75,22 @@ async def create_matcha_swap_tx(
             'gasPrice': int(transaction['gasPrice']),
             'gas': int(transaction['gas']),
         }
-        return tx, transaction['to']
+
+        # Добавляем approve, если нужно
+        if swap_config.from_token.name != 'ETH':
+            await self.approve_token(amount, self.private_key, swap_config.from_token.address, transaction['to'], self.wallet_address, self.web3)
+            await sleep(3)
+
+        # Отправляем tx
+        tx_hash = await self.sign_transaction(tx)
+        logger.info(f"Matcha tx sent: {tx_hash}")
+        confirmed = await self.wait_until_tx_finished(tx_hash)
+        if confirmed:
+            logger.success(f"Matcha swap confirmed: {tx_hash}")
+            return tx, transaction['to']
+        else:
+            logger.error(f"Matcha tx failed: {tx_hash}")
+            return None, None
+
+    logger.error(f"Matcha quote failed: status {status}")
+    return None, None
