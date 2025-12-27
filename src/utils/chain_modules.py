@@ -275,11 +275,11 @@ async def process_relay_swap(route, chain_obj):
 
 # Список модулей для цепочек
 CHAIN_MODULES = {
-    'BASE': ['UNISWAP', 'MATCHA_SWAP', 'BUNGEE_SWAP', 'RELAY_SWAP'],
-    'OPTIMISM': ['UNISWAP', 'MATCHA_SWAP'],
-    'ARBITRUM': ['UNISWAP', 'MATCHA_SWAP'],
+    'BASE': ['MATCHA_SWAP', 'BUNGEE_SWAP', 'RELAY_SWAP'],
+    'OPTIMISM': ['MATCHA_SWAP', 'BUNGEE_SWAP', 'RELAY_SWAP'],
+    'ARBITRUM': ['MATCHA_SWAP', 'BUNGEE_SWAP', 'RELAY_SWAP'],
     'LINEA': ['MATCHA_SWAP', 'BUNGEE_SWAP', 'RELAY_SWAP'],
-    'ETHEREUM': ['UNISWAP'],
+    'ETHEREUM': ['UNISWAP', 'MATCHA_SWAP', 'BUNGEE_SWAP', 'RELAY_SWAP'],
 }
 
 # Связь задачи → функция
