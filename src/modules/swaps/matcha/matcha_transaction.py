@@ -3,7 +3,7 @@ from typing import Optional, Dict, Any
 import pyuseragents
 from web3.contract import AsyncContract
 from web3.types import TxParams
-
+from src.utils.data.tokens import tokens
 from src.models.swap import SwapConfig
 from src.utils.request_client.curl_cffi_client import CurlCffiClient
 
