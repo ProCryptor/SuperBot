@@ -18,12 +18,17 @@ class SwapExecutor:
         logger.info(f"SWAP DAY: planning {swaps_count} swaps")
 
         for i in range(swaps_count):
-            chain_name = self.planner.choose_swap_chain()
+            chain_name = self.planner.choose_swap_chain(
+                exclude=self.memory.failed_chains()
+            )
             if not chain_name:
                 logger.warning("Planner returned no chain for swap")
                 continue
 
-            available = CHAIN_MODULES.get(chain_name, [])
+            available = [
+                m for m in CHAIN_MODULES.get(chain_name, [])
+                if not self.memory.was_recent_swap(chain_name, m)
+            ]
             if not available:
                 logger.warning(f"No swap modules for {chain_name}")
                 continue
@@ -42,8 +47,11 @@ class SwapExecutor:
 
             success = await self._run_with_retries(module, chain)
 
-            self.memory.record_swap(chain_name, module, success)
-
+            self.memory.record_swap(
+                chain=chain_name,
+                module=module,
+                success=success
+            )
             pause = random.randint(30, 120)
             logger.info(f"Pause between swaps: {pause}s")
             await asyncio.sleep(pause)
