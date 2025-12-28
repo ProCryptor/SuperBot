@@ -92,7 +92,7 @@ async def process_uniswap(route, chain_obj):
     if not from_token:
         logger.warning("Uniswap skipped: no suitable balance")
         return False
-
+        
     try:
         swap = Uniswap(
             private_key=route.wallet.private_key,
@@ -120,22 +120,31 @@ def create_process_swap_function(swap_class: type):
             logger.warning(f"{swap_class.__name__} skipped: no suitable balance")
             return False
 
-        try:
-            swap = swap_class(
-                private_key=route.wallet.private_key,
-                from_token=from_token,
-                to_token=to_token,
-                amount=amount,
-                use_percentage=False,
-                swap_percentage=0.0,
-                swap_all_balance=False,
-                proxy=route.wallet.proxy,
-                chain=chain_obj
-            )
-            return await swap.swap()
-        except Exception as e:
-            logger.error(f"{swap_class.__name__} error: {e}")
-            return False
+        for attempt in range(3):  # ← retry 3 раза
+            try:
+                swap = swap_class(
+                    private_key=route.wallet.private_key,
+                    from_token=from_token,
+                    to_token=to_token,
+                    amount=amount,
+                    use_percentage=False,
+                    swap_percentage=0.0,
+                    swap_all_balance=False,
+                    proxy=route.wallet.proxy,
+                    chain=chain_obj
+                )
+                success = await swap.swap()
+                if success:
+                    logger.success(f"{swap_class.__name__} swap successful on {chain_obj.chain_name}")
+                    return True
+                else:
+                    logger.error(f"{swap_class.__name__} swap failed on {chain_obj.chain_name}")
+                    return False
+            except Exception as e:
+                logger.warning(f"{swap_class.__name__} retry {attempt+1}/3: {e}")
+                await asyncio.sleep(5 + attempt * 2)  # 5, 7, 9 сек
+        logger.error(f"{swap_class.__name__} failed after 3 retries")
+        return False
 
     return process
 
