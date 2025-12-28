@@ -1,23 +1,17 @@
-from src.utils.memory import MemoryManager, ActivityMemory
+from src.utils.memory import GlobalMemory
 from src.utils.planner import ActivityPlanner
 from src.modules.bridges.bridge_executor import BridgeExecutor
 from src.modules.swaps.swap_executor import SwapExecutor
 
+memory = GlobalMemory()
+planner = ActivityPlanner(memory)
 
-async def main_flow(route):
-    """
-    Главный сценарий активности аккаунта
-    """
+# 1️⃣ Bridge day
+await BridgeExecutor(route, planner, memory).run_bridge_day()
 
-    # === ПАМЯТЬ ===
-    memory_manager = MemoryManager()
-    activity_memory = ActivityMemory()
+# 2️⃣ Swap day
+await SwapExecutor(route, planner, memory.swaps).run_swap_day()
 
-    # === ПЛАНИРОВЩИК ===
-    planner = ActivityPlanner(
-        memory=activity_memory,
-        global_memory=memory_manager
-    )
 
     # === BRIDGE DAY ===
     if memory_manager.can_bridge_today(route.wallet.address):
