@@ -5,7 +5,7 @@ from src.utils.data.bridges import BRIDGES
 
 class ActivityPlanner:
     def __init__(self):
-        self.memory = memory
+        
         # Вероятности
         self.skip_day_chance = 0.15        # 25% — вообще ничего не делать
         self.light_day_chance = 0.35       # 35% — лёгкий день
