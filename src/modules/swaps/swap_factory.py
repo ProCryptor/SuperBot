@@ -112,11 +112,28 @@ def create_swap_class(
             return await swap_tx_function(self, swap_config, contract, amount_out, amount)
 
         async def swap(self) -> bool:
+            amount_wei = await utils.create_amount(
+                amount=self.config.amount,
+                is_native=self.config.from_token.is_native,
+                token_address=self.config.from_token.address,
+                web3=self.web3
+            )
+
+            if not self.config.from_token.is_native:
+                await utils.approve_token(
+                    amount=amount_wei,
+                    private_key=self.private_key,
+                    token_address=self.config.from_token.address,
+                    spender=to_address,
+                    wallet_address=self.wallet_address,
+                    web3=self.web3
+                )
+
             tx_params, to_address = await self.create_swap_tx(
                 self.config,
-                self.contract,  # ← если None, передадим None
+                self.contract,
                 0,
-                int(self.config.amount * 10**18)
+                amount_wei
             )
             if not tx_params:
                 logger.error(f"{self.name} failed to create tx params")
