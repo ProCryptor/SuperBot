@@ -24,7 +24,7 @@ from src.models.route import Route
 from src.models.chain import Chain
 from src.utils.data.chains import chain_mapping
 from src.utils.memory import GlobalMemory
-from src.modules.bridges.bridge_executor import BridgeExecutor
+from src.utils.bridges.bridge_executor import BridgeExecutor
 from src.modules.swaps.swap_executor import SwapExecutor
 from src.ui.interface import get_module, LOGO_LINES, PROJECT_INFO, clear_screen, get_module_menu
 
