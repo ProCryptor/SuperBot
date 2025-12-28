@@ -33,10 +33,14 @@ async def get_erc20_balance(w3: AsyncWeb3, wallet: str, token_address: str) -> f
             "type": "function",
         },
     ]
-    contract = w3.eth.contract(address=w3.to_checksum_address(token_address), abi=abi)
-    raw = await contract.functions.balanceOf(wallet).call()
-    decimals = await contract.functions.decimals().call()
-    return raw / (10 ** decimals)
+    try:
+        contract = w3.eth.contract(address=w3.to_checksum_address(token_address), abi=abi)
+        raw = await contract.functions.balanceOf(wallet).call()
+        decimals = await contract.functions.decimals().call()
+        return raw / (10 ** decimals)
+    except Exception as e:
+        logger.error(f"Failed to get ERC20 balance for {token_address}: {e}")
+        return 0.0
 
 def choose_swap_pair():
     from_token = random.choice(ALL_TOKENS)
@@ -51,7 +55,6 @@ async def prepare_swap(route, chain_obj):
     for _ in range(20):
         from_token, to_token = choose_swap_pair()
 
-        # === FROM ETH ===
         if from_token == 'ETH':
             eth_balance = float(w3.from_wei(await w3.eth.get_balance(wallet), 'ether'))
             if eth_balance < 0.0004:
@@ -60,8 +63,7 @@ async def prepare_swap(route, chain_obj):
             amount = round(random.uniform(0.0002, eth_balance * 0.6), 6)
             return from_token, to_token, amount, chain_obj
 
-        # === FROM ERC20 ===
-        token_address = tokens[chain_obj.chain_name].get(from_token)
+        token_address = tokens.get(chain_obj.chain_name, {}).get(from_token)
         if token_address is None:
             logger.warning(f"Token {from_token} not found in chain {chain_obj.chain_name}")
             continue
@@ -109,82 +111,37 @@ async def process_uniswap(route, chain_obj):
         return False
 
 # =========================
-# MATCHA
+# MATCHA, BUNGEE, RELAY
 # =========================
-async def process_matcha_swap(route, chain_obj):
-    from_token, to_token, amount, chain_obj = await prepare_swap(route, chain_obj)
-    if not from_token:
-        logger.warning("Matcha skipped: no suitable balance")
-        return False
+def create_process_swap_function(swap_class: type):
+    async def process(route, chain_obj):
+        from_token, to_token, amount, chain_obj = await prepare_swap(route, chain_obj)
+        if not from_token:
+            logger.warning(f"{swap_class.__name__} skipped: no suitable balance")
+            return False
 
-    try:
-        swap = MatchaSwap(
-            private_key=route.wallet.private_key,
-            from_token=from_token,
-            to_token=to_token,
-            amount=amount,
-            use_percentage=False,
-            swap_percentage=0,
-            swap_all_balance=False,
-            proxy=route.wallet.proxy,
-            chain=chain_obj
-        )
-        return await swap.swap()
-    except Exception as e:
-        logger.error(f"Matcha error: {e}")
-        return False
+        try:
+            swap = swap_class(
+                private_key=route.wallet.private_key,
+                from_token=from_token,
+                to_token=to_token,
+                amount=amount,
+                use_percentage=False,
+                swap_percentage=0.0,
+                swap_all_balance=False,
+                proxy=route.wallet.proxy,
+                chain=chain_obj
+            )
+            return await swap.swap()
+        except Exception as e:
+            logger.error(f"{swap_class.__name__} error: {e}")
+            return False
 
-# =========================
-# BUNGEE
-# =========================
-async def process_bungee_swap(route, chain_obj):
-    from_token, to_token, amount, chain_obj = await prepare_swap(route, chain_obj)
-    if not from_token:
-        logger.warning("Bungee skipped: no suitable balance")
-        return False
+    return process
 
-    try:
-        swap = BungeeSwap(
-            private_key=route.wallet.private_key,
-            from_token=from_token,
-            to_token=to_token,
-            amount=amount,
-            use_percentage=False,
-            swap_percentage=0,
-            swap_all_balance=False,
-            proxy=route.wallet.proxy,
-            chain=chain_obj
-        )
-        return await swap.swap()
-    except Exception as e:
-        logger.error(f"Bungee error: {e}")
-        return False
-
-# =========================
-# RELAY
-# =========================
-async def process_relay_swap(route, chain_obj):
-    from_token, to_token, amount, chain_obj = await prepare_swap(route, chain_obj)
-    if not from_token:
-        logger.warning("RelaySwap skipped: no suitable balance")
-        return False
-
-    try:
-        swap = RelaySwap(
-            private_key=route.wallet.private_key,
-            from_token=from_token,
-            to_token=to_token,
-            amount=amount,
-            use_percentage=False,
-            swap_percentage=0,
-            swap_all_balance=False,
-            proxy=route.wallet.proxy,
-            chain=chain_obj
-        )
-        return await swap.swap()
-    except Exception as e:
-        logger.error(f"RelaySwap error: {e}")
-        return False
+process_matcha_swap = create_process_swap_function(MatchaSwap)
+process_bungee_swap = create_process_swap_function(BungeeSwap)
+process_relay_swap = create_process_swap_function(RelaySwap)
 
 # =========================
 # MODULE MAP
