@@ -32,3 +32,44 @@ class MemoryManager:
 
     def was_task_recent(self, wallet: str, task: str) -> bool:
         return task in self.recent_tasks[wallet]
+# src/utils/memory.py
+from collections import defaultdict
+import time
+
+
+class ActivityMemory:
+    def __init__(self):
+        self.last_chain = None
+
+        self.failed_swaps = defaultdict(int)   # (chain, module) -> count
+        self.success_swaps = defaultdict(int)
+
+        self.recent_swaps = []  # [(chain, module, ts)]
+
+    # ===== SWAPS =====
+
+    def record_swap(self, chain, module, success: bool):
+        key = (chain, module)
+
+        if success:
+            self.success_swaps[key] += 1
+        else:
+            self.failed_swaps[key] += 1
+
+        self.recent_swaps.append((chain, module, time.time()))
+        self.recent_swaps = self.recent_swaps[-20:]  # ограничение памяти
+
+    def swap_failed_too_much(self, chain, module, limit=3) -> bool:
+        return self.failed_swaps[(chain, module)] >= limit
+
+    def was_recent_swap(self, chain, module, window=3600) -> bool:
+        now = time.time()
+        return any(
+            c == chain and m == module and now - ts < window
+            for c, m, ts in self.recent_swaps
+        )
+
+    # ===== CHAINS =====
+
+    def update_chain(self, chain):
+        self.last_chain = chain
