@@ -92,7 +92,7 @@ async def process_route(route: Route) -> None:
     chain_name = planner.get_chain_for_today()
 
     # --- MEMORY: не ходим в одну и ту же сеть подряд ---
-    last_chain = memory.get_last_chain(wallet_id)
+    last_chain = memory.bridges.get_last_chain(wallet_id)
     if last_chain == chain_name:
         logger.info(
             f'Memory: avoiding same chain {chain_name}, re-rolling'
@@ -100,7 +100,7 @@ async def process_route(route: Route) -> None:
         chain_name = planner.get_chain_for_today()
 
     route.current_chain = chain_name
-    memory.remember_chain(wallet_id, chain_name)
+    memory.bridges.remember_chain(wallet_id, chain_name)
 
 
     # Тип дня и количество tx
@@ -121,7 +121,7 @@ async def process_route(route: Route) -> None:
     private_key = route.wallet.private_key
 
     
-    if not memory.can_bridge_today(wallet_id):
+    if not memory.bridges.can_bridge_today(wallet_id):
         logger.info('Memory: bridge cooldown active')
         is_bridge_day = False
 
@@ -150,15 +150,15 @@ async def process_route(route: Route) -> None:
 
     for task in tasks_today:
         
-        if memory.was_task_recent(wallet_id, task):
+        if memory.bridges.was_task_recent(wallet_id, task):
             logger.info(f'Memory: skipping repeated task {task}')
             continue
         
         if task == 'BRIDGE_RANDOM':
             success = await process_chain_disperse(route)
             if success:
-                memory.remember_bridge(wallet_id)
-                memory.remember_task(wallet_id, task)
+                memory.bridges.remember_bridge_day(wallet_id)
+                memory.bridges.remember_task(wallet_id, task)
 
                 # пересборка под новую сеть
                 available_tasks = CHAIN_MODULES.get(current_chain, [])
