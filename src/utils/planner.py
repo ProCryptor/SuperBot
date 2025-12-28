@@ -2,7 +2,7 @@ import random
 from datetime import datetime, timedelta
 from loguru import logger
 from src.utils.data.bridges import BRIDGES
-from src.utils.memory import MemoryManager, ActivityMemory
+from src.utils.memory import UnifiedMemory
 
 memory = UnifiedMemory()
 
