@@ -23,7 +23,7 @@ from src.utils.retrieve_route import get_routes
 from src.models.route import Route
 from src.models.chain import Chain
 from src.utils.data.chains import chain_mapping
-from src.utils.memory import MemoryManager
+from src.utils.memory import GlobalMemory
 from src.modules.bridges.bridge_executor import BridgeExecutor
 from src.modules.swaps.swap_executor import SwapExecutor
 from src.ui.interface import get_module, LOGO_LINES, PROJECT_INFO, clear_screen, get_module_menu
@@ -39,7 +39,7 @@ if sys.platform == 'win32':
 
 console = Console()
 
-memory = MemoryManager()
+memory = GlobalMemory()
 
 async def process_task(routes: list[Route]) -> None:
     if not routes:
