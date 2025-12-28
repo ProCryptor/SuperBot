@@ -1,7 +1,6 @@
 import random
 import asyncio
 from loguru import logger
-from loguru import logger
 
 from src.models.chain import Chain
 from src.utils.data.chains import chain_mapping
