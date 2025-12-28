@@ -6,6 +6,7 @@ from src.utils.memory import GlobalMemory
 from src.utils.data.bridges import BRIDGES
 from src.utils.data.chains import chain_mapping
 
+memory = GlobalMemory()
 
 class ActivityPlanner:
     def __init__(self, memory: GlobalMemory):
