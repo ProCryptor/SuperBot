@@ -1,11 +1,15 @@
 import random
 from datetime import datetime, timedelta
 from loguru import logger
+from typing import Optional
+from src.utils.memory import GlobalMemory
 from src.utils.data.bridges import BRIDGES
+from src.utils.data.chains import chain_mapping
 
 
 class ActivityPlanner:
-    def __init__(self):
+    def __init__(self, memory: GlobalMemory):
+        self.memory = memory
         
         # Вероятности
         self.skip_day_chance = 0.15        # 25% — вообще ничего не делать
@@ -99,13 +103,13 @@ class ActivityPlanner:
             'LINEA': 15,
             'ETHEREUM': 5
         }
-
         chain = random.choices(
             population=list(weights.keys()),
             weights=list(weights.values()),
             k=1
         )[0]
 
+        
         logger.info(f'Planner: selected chain → {chain}')
         return chain
         
@@ -119,59 +123,14 @@ class ActivityPlanner:
 
         return random.random() < max(0.05, min(base_chance, 0.8))
 
-    from src.utils.data.bridges import BRIDGES
-
+    
     def choose_bridge_target(self, current_chain: str) -> str | None:
         targets = BRIDGES.get(current_chain, [])
         if not targets:
             return None
         return random.choice(targets)
 
-    def plan_swap_day(self, min_swaps=2, max_swaps=4):
-        count = random.randint(min_swaps, max_swaps)
-        plan = []
-
-        for _ in range(count):
-            intent = self._plan_single_swap()
-            if intent:
-                plan.append(intent)
-
-        return plan
-
-    def _plan_single_swap(self):
-        chains = list(CHAIN_MODULES.keys())
-        random.shuffle(chains)
-
-        for chain in chains:
-            modules = CHAIN_MODULES.get(chain, [])
-            random.shuffle(modules)
-
-            for module in modules:
-                if self.memory.swap_failed_too_much(chain, module):
-                    continue
-
-                if self.memory.was_recent_swap(chain, module):
-                    continue
-
-                return {
-                    "chain": chain,
-                    "module": module
-                }
-
-        return None
-
-    def choose_swap_count(self):
-        return random.randint(2, 4)
-
-    def choose_swap_chain(self):
-        return random.choice(list(chain_mapping.keys()))
-
-    def choose_swap_module(self, modules):
-        return random.choice(modules)
-
-    def swap_pause(self):
-        return random.randint(30, 120)
-
+    
     def get_weekday_modifier(self) -> float:
         """
         Модификатор активности по дню недели
