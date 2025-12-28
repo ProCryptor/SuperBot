@@ -1,6 +1,6 @@
 from src.utils.memory import GlobalMemory
 from src.utils.planner import ActivityPlanner
-from src.modules.bridges.bridge_executor import BridgeExecutor
+from src.utils.bridges.bridge_executor import BridgeExecutor
 from src.modules.swaps.swap_executor import SwapExecutor
 
 memory = GlobalMemory()
