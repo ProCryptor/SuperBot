@@ -1,12 +1,9 @@
 from src.utils.memory import MemoryManager, ActivityMemory
 
-planner = MemoryManager, ActivityMemory()
-memory = MemoryManager, ActivityMemory()
+memory = MemoryManager()          # для chain/bridge/tasks
+activity_memory = ActivityMemory()  # для swaps
 
-# 1️⃣ Бриджи
+planner = ActivityPlanner(memory, activity_memory)  
+
 await BridgeExecutor(route, planner, memory).run_bridge_day()
-
-# 2️⃣ Свапы (ОТДЕЛЬНО)
-swap_executor = SwapExecutor(route, planner, memory)
-await swap_executor.run_swap_day()
-
+await SwapExecutor(route, planner, activity_memory).run_swap_day()  
