@@ -1,5 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
+import time
 
 
 class MemoryManager:
@@ -32,9 +33,6 @@ class MemoryManager:
 
     def was_task_recent(self, wallet: str, task: str) -> bool:
         return task in self.recent_tasks[wallet]
-# src/utils/memory.py
-from collections import defaultdict
-import time
 
 
 class ActivityMemory:
