@@ -125,8 +125,17 @@ class ActivityPlanner:
             return None
         return random.choice(targets)
 
+    def choose_swap_count(self):
+        return random.randint(2, 4)
+
     def choose_swap_chain(self):
-    return random.choice(list(self.allowed_chains))
+        return random.choice(list(chain_mapping.keys()))
+
+    def choose_swap_module(self, modules):
+        return random.choice(modules)
+
+    def swap_pause(self):
+        return random.randint(30, 120)
 
     def get_weekday_modifier(self) -> float:
         """
