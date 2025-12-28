@@ -5,6 +5,7 @@ from src.utils.data.bridges import BRIDGES
 
 class ActivityPlanner:
     def __init__(self):
+        self.memory = memory
         # Вероятности
         self.skip_day_chance = 0.15        # 25% — вообще ничего не делать
         self.light_day_chance = 0.35       # 35% — лёгкий день
@@ -124,6 +125,39 @@ class ActivityPlanner:
         if not targets:
             return None
         return random.choice(targets)
+
+    def plan_swap_day(self, min_swaps=2, max_swaps=4):
+        count = random.randint(min_swaps, max_swaps)
+        plan = []
+
+        for _ in range(count):
+            intent = self._plan_single_swap()
+            if intent:
+                plan.append(intent)
+
+        return plan
+
+    def _plan_single_swap(self):
+        chains = list(CHAIN_MODULES.keys())
+        random.shuffle(chains)
+
+        for chain in chains:
+            modules = CHAIN_MODULES.get(chain, [])
+            random.shuffle(modules)
+
+            for module in modules:
+                if self.memory.swap_failed_too_much(chain, module):
+                    continue
+
+                if self.memory.was_recent_swap(chain, module):
+                    continue
+
+                return {
+                    "chain": chain,
+                    "module": module
+                }
+
+        return None
 
     def choose_swap_count(self):
         return random.randint(2, 4)
