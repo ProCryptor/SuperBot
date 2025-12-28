@@ -72,3 +72,6 @@ class ActivityMemory:
 
     def update_chain(self, chain):
         self.last_chain = chain
+
+class UnifiedMemory(MemoryManager, ActivityMemory):
+    pass
