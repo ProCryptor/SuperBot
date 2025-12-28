@@ -15,7 +15,7 @@ from src.utils.data.tokens import tokens
 from web3 import AsyncWeb3, AsyncHTTPProvider
 from eth_account import Account
 
-async def process_chain_disperse(route):
+async def bridge_executor(route):
     planner = ActivityPlanner()
     current_chain = route.current_chain or 'BASE'
 
