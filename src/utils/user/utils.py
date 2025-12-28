@@ -96,12 +96,8 @@ class Utils:
         return 18 if is_native else await self.get_decimals(token_address, web3)
 
     async def create_amount(
-        self,
-        *,
-        amount: float,
-        is_native: bool,
-        token_address: str,
-        web3: AsyncWeb3
+            self, is_native: bool, from_token_address: str, web3: AsyncWeb3, amount: float
     ) -> int:
-        decimals = await self.setup_decimals(is_native, token_address, web3)
-        return int(float(amount) * (10 ** decimals))
+        decimals = await self.setup_decimals(is_native, from_token_address, web3)
+        amount = int(amount * 10 ** decimals)
+        return amount
