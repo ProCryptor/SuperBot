@@ -15,7 +15,7 @@ from src.utils.data.tokens import tokens
 from web3 import AsyncWeb3, AsyncHTTPProvider
 from eth_account import Account
 
-async def bridge_executor(route):
+async def BridgeExecutor(route):
     planner = ActivityPlanner()
     current_chain = route.current_chain or 'BASE'
 
