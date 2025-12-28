@@ -2,13 +2,11 @@ import random
 from datetime import datetime, timedelta
 from loguru import logger
 from src.utils.data.bridges import BRIDGES
-from src.utils.memory import UnifiedMemory
 
-memory = UnifiedMemory()
 
 class ActivityPlanner:
     def __init__(self):
-        self.memory = memory
+        
         # Вероятности
         self.skip_day_chance = 0.15        # 25% — вообще ничего не делать
         self.light_day_chance = 0.35       # 35% — лёгкий день
