@@ -88,13 +88,11 @@ class Utils:
             spender: str
     ) -> Optional[int]:
         try:
-            contract = web3.eth.contract(address=web3.to_checksum_address(from_token_address),
-                                         abi=ERC20.abi)
-            amount_approved = await contract.functions.allowance(address_wallet, spender).call()
-            return amount_approved
-
-        except Exception as ex:
-            logger.error(f'Something went wrong | {ex}')
+            allowance = await contract.functions.allowance(owner, spender).call()
+            return int(allowance or 0)
+        except Exception as e:
+            logger.error(f"check_allowance failed: {e}")
+            return 0
 
     async def setup_decimals(
             self, is_native: bool, from_token_address: str, web3: AsyncWeb3
