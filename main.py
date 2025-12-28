@@ -71,7 +71,7 @@ async def safe_process_route(route: Route):
 
 
 async def process_route(route: Route) -> None:
-    planner = ActivityPlanner()
+    planner = ActivityPlanner(memory)
     wallet_id = route.wallet.private_key[:10]
     planner.personality = planner.assign_wallet_personality(wallet_id)
 
