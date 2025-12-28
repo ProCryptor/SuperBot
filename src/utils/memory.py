@@ -92,3 +92,11 @@ class ActivityMemory:
 
     def update_chain(self, chain: str):
         self.last_chain = chain
+
+# src/utils/memory.py
+
+class GlobalMemory:
+    def __init__(self):
+        self.bridges = MemoryManager()
+        self.swaps = ActivityMemory()
+
