@@ -77,11 +77,7 @@ async def create_matcha_swap_tx(
             'gas': int(transaction['gas']),
         }
 
-        # Добавляем approve, если нужно
-        if swap_config.from_token.name != 'ETH':
-            await self.approve_token(amount, self.private_key, swap_config.from_token.address, transaction['to'], self.wallet_address, self.web3)
-            await sleep(3)
-
+       
         # Отправляем tx
         tx_hash = await self.sign_transaction(tx)
         logger.info(f"Matcha tx sent: {tx_hash}")
