@@ -125,6 +125,9 @@ class ActivityPlanner:
             return None
         return random.choice(targets)
 
+    def choose_swap_chain(self):
+    return random.choice(list(self.allowed_chains))
+
     def get_weekday_modifier(self) -> float:
         """
         Модификатор активности по дню недели
