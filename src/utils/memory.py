@@ -14,9 +14,9 @@ class MemoryManager:
     """
 
     def __init__(self):
-        self.last_chain = {}
-        self.last_bridge_day = {}
-        self.recent_tasks = defaultdict(list)
+        self.last_chain: dict[str, str] = {}
+        self.last_bridge_day: dict[str, datetime] = {}
+        self.recent_tasks: dict[str, list[str]] = defaultdict(list)
 
     # ===== CHAINS =====
 
@@ -93,10 +93,7 @@ class ActivityMemory:
     def update_chain(self, chain: str):
         self.last_chain = chain
 
-# src/utils/memory.py
 
-class GlobalMemory:
-    def __init__(self):
-        self.bridges = MemoryManager()
-        self.swaps = ActivityMemory()
+class GlobalMemory(MemoryManager, ActivityMemory):
+    pass
 
