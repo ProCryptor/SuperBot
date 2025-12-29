@@ -41,7 +41,6 @@ if sys.platform == 'win32':
 
 console = Console()
 
-memory = GlobalMemory()
 
 async def process_task(routes: list[Route]) -> None:
     if not routes:
