@@ -14,9 +14,9 @@ class MemoryManager:
     """
 
     def __init__(self):
-        self.last_chain: dict[str, str] = {}
-        self.last_bridge_day: dict[str, datetime] = {}
-        self.recent_tasks: dict[str, list[str]] = defaultdict(list)
+        self.last_chain = {}
+        self.last_bridge_day = {}
+        self.recent_tasks = defaultdict(list)
 
     # ===== CHAINS =====
 
