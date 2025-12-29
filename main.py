@@ -155,7 +155,7 @@ async def process_route(route: Route) -> None:
             continue
         
         if task == 'BRIDGE_RANDOM':
-            success = await process_chain_disperse(route)
+            success = await BridgeExecutor(route)
             if success:
                 memory.bridges.remember_bridge_day(wallet_id)
                 memory.bridges.remember_task(wallet_id, task)
