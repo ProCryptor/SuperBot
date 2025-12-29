@@ -94,6 +94,7 @@ class ActivityMemory:
         self.last_chain = chain
 
 
-class GlobalMemory(MemoryManager, ActivityMemory):
-    pass
-
+class GlobalMemory:
+    def __init__(self):
+        self.bridges = MemoryManager()
+        self.swaps = ActivityMemory()
