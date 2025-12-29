@@ -16,7 +16,8 @@ from web3 import AsyncWeb3, AsyncHTTPProvider
 from eth_account import Account
 
 async def BridgeExecutor(route):
-    planner = ActivityPlanner()
+    memory = GlobalMemory()  # ← создаём memory здесь
+    planner = ActivityPlanner(memory)  # ← передаём memory
     current_chain = route.current_chain or 'BASE'
 
     # Сколько бриджей сделать сегодня (2–4)
@@ -121,5 +122,4 @@ async def BridgeExecutor(route):
         await asyncio.sleep(pause)
 
         logger.info(f"BRIDGE DAY completed: {success_count}/{num_bridges} successful")
-
         return success_count > 0
