@@ -98,3 +98,24 @@ class GlobalMemory:
     def __init__(self):
         self.bridges = MemoryManager()
         self.swaps = ActivityMemory()
+
+    # ===== BACKWARD COMPAT (временно) =====
+    # чтобы старый код не падал
+
+    def get_last_chain(self, wallet: str):
+        return self.bridges.get_last_chain(wallet)
+
+    def remember_chain(self, wallet: str, chain: str):
+        self.bridges.remember_chain(wallet, chain)
+
+    def can_bridge_today(self, wallet: str, cooldown_days: int = 2) -> bool:
+        return self.bridges.can_bridge_today(wallet, cooldown_days)
+
+    def remember_bridge_day(self, wallet: str):
+        self.bridges.remember_bridge_day(wallet)
+
+    def remember_task(self, wallet: str, task: str, limit: int = 5):
+        self.bridges.remember_task(wallet, task, limit)
+
+    def was_task_recent(self, wallet: str, task: str) -> bool:
+        return self.bridges.was_task_recent(wallet, task)
