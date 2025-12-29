@@ -23,7 +23,7 @@ from src.utils.retrieve_route import get_routes
 from src.models.route import Route
 from src.models.chain import Chain
 from src.utils.data.chains import chain_mapping
-from src.utils.memory import MemoryManager
+from src.utils.memory import GlobalMemory
 from src.utils.bridges.bridge_executor import BridgeExecutor
 from src.modules.swaps.swap_executor import SwapExecutor
 from src.ui.interface import get_module, LOGO_LINES, PROJECT_INFO, clear_screen, get_module_menu
@@ -33,7 +33,7 @@ logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 logging.basicConfig(level=logging.CRITICAL)
 logger.add("logs/app.log", rotation="10 MB", retention="7 days")
 
-memory = MemoryManager()
+memory = GlobalMemory()
 
 
 if sys.platform == 'win32':
