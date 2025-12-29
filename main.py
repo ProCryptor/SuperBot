@@ -33,6 +33,8 @@ logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 logging.basicConfig(level=logging.CRITICAL)
 logger.add("logs/app.log", rotation="10 MB", retention="7 days")
 
+memory = GlobalMemory()
+
 
 if sys.platform == 'win32':
     set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
